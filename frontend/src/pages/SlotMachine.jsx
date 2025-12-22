@@ -16,7 +16,6 @@ export default function SlotMachine() {
   const [photos, setPhotos] = useState([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [showWin, setShowWin] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [leverPulled, setLeverPulled] = useState(false);
   
