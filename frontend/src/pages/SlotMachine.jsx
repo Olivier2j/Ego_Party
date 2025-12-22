@@ -82,6 +82,8 @@ export default function SlotMachine() {
     }, 500);
   }, [isSpinning, photos, playSound, stopSound]);
 
+  const canSpin = photos.length > 0 && !isSpinning;
+
   return (
     <div className="min-h-screen velvet-texture flex flex-col items-center justify-center p-4 overflow-hidden relative">
       {/* Background decorations */}
@@ -117,8 +119,59 @@ export default function SlotMachine() {
         </p>
       </div>
 
-      {/* Slot Machine Body */}
-      <div className="relative">
+      {/* Slot Machine Body with Lever */}
+      <div className="relative flex items-center gap-4">
+        
+        {/* Lever on the LEFT - Clickable */}
+        <div 
+          className={`relative cursor-pointer select-none transition-transform hover:scale-105 ${
+            !canSpin ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          onClick={handleSpin}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && handleSpin()}
+          aria-label="Tirer le levier pour tourner"
+        >
+          {/* Lever Base/Mount */}
+          <div className="relative">
+            {/* Base plate */}
+            <div className="w-12 h-40 chrome-effect rounded-lg border-2 border-gray-500 shadow-lg" />
+            
+            {/* Lever mechanism slot */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-6 h-28 bg-gray-800 rounded-full border border-gray-600" />
+            
+            {/* Lever Arm - Animated */}
+            <div
+              className={`absolute top-2 left-1/2 -translate-x-1/2 transition-transform duration-500 origin-bottom ${
+                leverPulled ? 'rotate-[60deg]' : 'rotate-0'
+              }`}
+            >
+              {/* Arm shaft */}
+              <div className="w-3 h-28 chrome-effect rounded-full border border-gray-400 shadow-md" />
+              
+              {/* Lever Ball/Handle */}
+              <div 
+                className={`w-14 h-14 -mt-2 -ml-[22px] rounded-full shadow-xl border-4 transition-all duration-300 ${
+                  canSpin 
+                    ? 'bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-red-300 hover:from-red-300 hover:via-red-400 hover:to-red-600' 
+                    : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 border-gray-400'
+                }`}
+              >
+                {/* Shine effect on ball */}
+                <div className="absolute top-2 left-2 w-4 h-4 bg-white/40 rounded-full blur-sm" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Label under lever */}
+          <p className={`font-display text-sm mt-3 text-center transition-colors ${
+            canSpin ? 'text-primary' : 'text-muted-foreground'
+          }`}>
+            {isSpinning ? 'ATTENDRE...' : 'TIRER'}
+          </p>
+        </div>
+
         {/* Machine Frame with Bulbs */}
         <div className="relative bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900 rounded-3xl p-6 sm:p-8 shadow-machine border-4 border-amber-600">
           {/* Top Bulbs */}
@@ -167,44 +220,10 @@ export default function SlotMachine() {
           <CasinoBulbs position="left" count={7} />
           <CasinoBulbs position="right" count={7} />
         </div>
-
-        {/* Lever */}
-        <div className="absolute -right-16 sm:-right-20 top-1/2 -translate-y-1/2">
-          <div className="relative">
-            {/* Lever Base */}
-            <div className="w-8 h-32 chrome-effect rounded-full border-2 border-gray-500" />
-            
-            {/* Lever Arm */}
-            <div
-              className={`absolute -top-12 left-1/2 -translate-x-1/2 transition-transform duration-500 origin-bottom ${
-                leverPulled ? 'rotate-45' : 'rotate-0'
-              }`}
-            >
-              <div className="w-4 h-24 chrome-effect rounded-full border border-gray-500" />
-              {/* Lever Ball */}
-              <div className="w-10 h-10 -mt-2 -ml-3 rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-800 border-4 border-red-400 shadow-lg" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Spin Button */}
-      <div className="mt-8 relative z-10">
-        <Button
-          variant="casino"
-          size="xl"
-          onClick={handleSpin}
-          disabled={isSpinning || photos.length === 0}
-          className={`text-2xl px-12 py-6 h-auto ${
-            isSpinning ? 'opacity-50' : 'animate-pulse-glow'
-          }`}
-        >
-          {isSpinning ? 'EN COURS...' : 'TOURNER'}
-        </Button>
       </div>
 
       {/* Photo Count */}
-      <div className="mt-4 text-center">
+      <div className="mt-6 text-center">
         <p className="text-muted-foreground font-display text-lg">
           {photos.length} PHOTO{photos.length !== 1 ? 'S' : ''} DANS LA MACHINE
         </p>
