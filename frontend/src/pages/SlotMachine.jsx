@@ -121,7 +121,7 @@ export default function SlotMachine() {
           </div>
 
           {/* Top Bulbs */}
-          <CasinoBulbs position="top" count={9} />
+          <CasinoBulbs position="top" count={9} isSpinning={isSpinning} />
           
           {/* Chrome Top Plate */}
           <div className="chrome-effect h-6 rounded-t-xl mb-4 border-b-2 border-gray-600" />
@@ -160,11 +160,11 @@ export default function SlotMachine() {
           <div className="chrome-effect h-4 rounded-b-xl mt-4 border-t-2 border-gray-400" />
 
           {/* Bottom Bulbs */}
-          <CasinoBulbs position="bottom" count={9} />
+          <CasinoBulbs position="bottom" count={9} isSpinning={isSpinning} />
 
           {/* Side Bulbs */}
-          <CasinoBulbs position="left" count={7} />
-          <CasinoBulbs position="right" count={7} />
+          <CasinoBulbs position="left" count={7} isSpinning={isSpinning} />
+          <CasinoBulbs position="right" count={7} isSpinning={isSpinning} />
         </div>
 
         {/* Lever on the RIGHT (desktop) / BOTTOM (mobile) - Clickable */}
