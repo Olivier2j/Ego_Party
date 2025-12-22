@@ -7,9 +7,9 @@ import CasinoBulbs from '../components/CasinoBulbs';
 
 // Sound URLs - Wheel spinning sound like "The Price is Right"
 const SOUNDS = {
-  spin: 'https://assets.mixkit.co/active_storage/sfx/146/146-preview.mp3', // Wheel spinning/clicking sound
+  click: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // Single click/tick sound
   stop: 'https://assets.mixkit.co/active_storage/sfx/220/220-preview.mp3', // Soft bell ding
-  lever: 'https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3', // Click sound
+  lever: 'https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3', // Lever click sound
 };
 
 export default function SlotMachine() {
@@ -21,6 +21,8 @@ export default function SlotMachine() {
   const [isCelebrating, setIsCelebrating] = useState(false);
   
   const audioRefs = useRef({});
+  const clickAudioPoolRef = useRef([]); // Pool of audio elements for rapid clicks
+  const clickPoolIndexRef = useRef(0);
   const celebrationTimerRef = useRef(null);
 
   // Load photos from localStorage
@@ -40,6 +42,14 @@ export default function SlotMachine() {
       audio.preload = 'auto';
       audioRefs.current[key] = audio;
     });
+    
+    // Create a pool of click sounds for rapid playback
+    for (let i = 0; i < 8; i++) {
+      const clickAudio = new Audio(SOUNDS.click);
+      clickAudio.preload = 'auto';
+      clickAudio.volume = 0.4; // Lower volume for clicks
+      clickAudioPoolRef.current.push(clickAudio);
+    }
   }, []);
 
   const playSound = useCallback((soundName) => {
@@ -56,6 +66,19 @@ export default function SlotMachine() {
       audioRefs.current[soundName].currentTime = 0;
     }
   }, []);
+
+  // Play click sound from pool (for rapid succession)
+  const playClickSound = useCallback(() => {
+    if (!soundEnabled) return;
+    
+    const pool = clickAudioPoolRef.current;
+    if (pool.length > 0) {
+      const audio = pool[clickPoolIndexRef.current];
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+      clickPoolIndexRef.current = (clickPoolIndexRef.current + 1) % pool.length;
+    }
+  }, [soundEnabled]);
 
   const handleSpin = useCallback(() => {
     if (isSpinning || photos.length === 0) return;
