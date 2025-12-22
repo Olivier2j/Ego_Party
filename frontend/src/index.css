@@ -228,6 +228,30 @@
     }
 }
 
+/* Title celebration blink - for "EGO PARTY" during win music */
+.animate-title-blink {
+    animation: title-blink 0.2s ease-in-out infinite;
+}
+
+@keyframes title-blink {
+    0%, 100% {
+        text-shadow: 
+            0 0 5px hsl(43 100% 50%),
+            0 0 8px hsl(43 100% 50%),
+            0 0 15px hsl(43 100% 50%),
+            0 0 30px hsl(43 80% 50%);
+        color: hsl(43 100% 50%);
+    }
+    50% {
+        text-shadow: 
+            0 0 10px hsl(330 100% 60%),
+            0 0 20px hsl(330 100% 60%),
+            0 0 35px hsl(330 100% 55%),
+            0 0 50px hsl(330 80% 50%);
+        color: hsl(330 100% 65%);
+    }
+}
+
 .animate-jackpot {
     animation: jackpot-flash 1s ease infinite;
     background-size: 200% 200%;
