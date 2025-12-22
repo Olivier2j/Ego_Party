@@ -96,13 +96,11 @@ export default function SlotMachine() {
     setTimeout(() => {
       setLeverPulled(false);
       setIsSpinning(true);
-      playSound('spin');
     }, 500);
   }, [isSpinning, photos.length, playSound]);
 
   // Called by SlotReel when animation completes
   const handleSpinComplete = useCallback((photo) => {
-    stopSound('spin');
     playSound('stop');
     setIsSpinning(false);
     setSelectedPhoto(photo);
