@@ -1,75 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-    margin: 0;
-    font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-    font-family:
-        source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96.1%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96.1%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96.1%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
+        /* Retro Casino Color Palette - Las Vegas Style */
+        --background: 0 0% 8%;
+        --foreground: 45 100% 95%;
+        
+        /* Deep burgundy/velvet red */
+        --card: 350 50% 12%;
+        --card-foreground: 45 100% 95%;
+        
+        --popover: 350 50% 15%;
+        --popover-foreground: 45 100% 95%;
+        
+        /* Rich Gold - Primary CTA */
+        --primary: 43 100% 50%;
+        --primary-foreground: 0 0% 5%;
+        
+        /* Velvet Red - Secondary */
+        --secondary: 350 70% 35%;
+        --secondary-foreground: 45 100% 95%;
+        
+        /* Muted Casino Carpet */
+        --muted: 350 30% 18%;
+        --muted-foreground: 45 30% 70%;
+        
+        /* Neon Accent - Electric Pink/Magenta */
+        --accent: 330 100% 65%;
+        --accent-foreground: 0 0% 5%;
+        
+        /* Neon Cyan for highlights */
+        --neon-cyan: 180 100% 50%;
+        --neon-pink: 330 100% 60%;
+        --neon-gold: 43 100% 55%;
+        --neon-red: 0 100% 50%;
+        
+        /* Chrome/Metal accents */
+        --chrome: 0 0% 75%;
+        --chrome-dark: 0 0% 40%;
+        
+        --destructive: 0 84% 60%;
         --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
+        
+        --border: 43 50% 30%;
+        --input: 350 30% 20%;
+        --ring: 43 100% 50%;
+        
         --radius: 0.5rem;
-    }
-    .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
+        
+        /* Casino-specific tokens */
+        --slot-frame: linear-gradient(180deg, hsl(43 80% 60%) 0%, hsl(43 70% 40%) 50%, hsl(43 80% 55%) 100%);
+        --slot-inner: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 12%) 100%);
+        --velvet: linear-gradient(180deg, hsl(350 50% 18%) 0%, hsl(350 60% 12%) 100%);
+        --chrome-shine: linear-gradient(135deg, hsl(0 0% 85%) 0%, hsl(0 0% 50%) 50%, hsl(0 0% 70%) 100%);
+        
+        /* Shadows */
+        --shadow-neon-gold: 0 0 20px hsl(43 100% 50% / 0.5), 0 0 40px hsl(43 100% 50% / 0.3);
+        --shadow-neon-pink: 0 0 20px hsl(330 100% 60% / 0.5), 0 0 40px hsl(330 100% 60% / 0.3);
+        --shadow-neon-cyan: 0 0 15px hsl(180 100% 50% / 0.4);
+        --shadow-inner-slot: inset 0 10px 30px hsl(0 0% 0% / 0.8);
+        --shadow-machine: 0 30px 60px hsl(0 0% 0% / 0.7), 0 10px 20px hsl(0 0% 0% / 0.5);
+        
+        /* Polaroid specific */
+        --polaroid-bg: 45 30% 95%;
+        --polaroid-shadow: 0 4px 15px hsl(0 0% 0% / 0.4);
     }
 }
 
@@ -79,37 +77,217 @@ code {
     }
     body {
         @apply bg-background text-foreground;
+        font-family: 'Inter', sans-serif;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Bebas Neue', sans-serif;
+        letter-spacing: 0.05em;
     }
 }
 
-@layer base {
-    [data-debug-wrapper="true"] {
-        display: contents !important;
-    }
+/* Neon Text Effect */
+.neon-text-gold {
+    text-shadow: 
+        0 0 7px hsl(43 100% 50%),
+        0 0 10px hsl(43 100% 50%),
+        0 0 21px hsl(43 100% 50%),
+        0 0 42px hsl(43 80% 50%),
+        0 0 82px hsl(43 80% 50%);
+}
 
-    [data-debug-wrapper="true"] > * {
-        margin-left: inherit;
-        margin-right: inherit;
-        margin-top: inherit;
-        margin-bottom: inherit;
-        padding-left: inherit;
-        padding-right: inherit;
-        padding-top: inherit;
-        padding-bottom: inherit;
-        column-gap: inherit;
-        row-gap: inherit;
-        gap: inherit;
-        border-left-width: inherit;
-        border-right-width: inherit;
-        border-top-width: inherit;
-        border-bottom-width: inherit;
-        border-left-style: inherit;
-        border-right-style: inherit;
-        border-top-style: inherit;
-        border-bottom-style: inherit;
-        border-left-color: inherit;
-        border-right-color: inherit;
-        border-top-color: inherit;
-        border-bottom-color: inherit;
+.neon-text-pink {
+    text-shadow: 
+        0 0 7px hsl(330 100% 60%),
+        0 0 10px hsl(330 100% 60%),
+        0 0 21px hsl(330 100% 60%),
+        0 0 42px hsl(330 80% 50%);
+}
+
+.neon-text-cyan {
+    text-shadow: 
+        0 0 7px hsl(180 100% 50%),
+        0 0 10px hsl(180 100% 50%),
+        0 0 21px hsl(180 100% 50%);
+}
+
+/* Neon Border Animation */
+.neon-border {
+    box-shadow: 
+        0 0 5px hsl(43 100% 50%),
+        0 0 10px hsl(43 100% 50%),
+        inset 0 0 5px hsl(43 100% 50% / 0.3);
+}
+
+/* Slot Machine Reel Animation */
+@keyframes slot-spin {
+    0% {
+        transform: translateY(0);
     }
+    100% {
+        transform: translateY(-100%);
+    }
+}
+
+@keyframes slot-blur {
+    0%, 100% {
+        filter: blur(0px);
+    }
+    50% {
+        filter: blur(4px);
+    }
+}
+
+@keyframes neon-pulse {
+    0%, 100% {
+        opacity: 1;
+        filter: brightness(1);
+    }
+    50% {
+        opacity: 0.8;
+        filter: brightness(1.2);
+    }
+}
+
+@keyframes neon-flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+        opacity: 1;
+        text-shadow: 
+            0 0 7px currentColor,
+            0 0 10px currentColor,
+            0 0 21px currentColor;
+    }
+    20%, 24%, 55% {
+        opacity: 0.6;
+        text-shadow: none;
+    }
+}
+
+@keyframes jackpot-flash {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes lever-pull {
+    0% {
+        transform: rotate(0deg);
+    }
+    50% {
+        transform: rotate(45deg);
+    }
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes bounce-win {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-100%) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Animation Classes */
+.animate-neon-pulse {
+    animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.animate-neon-flicker {
+    animation: neon-flicker 3s linear infinite;
+}
+
+.animate-jackpot {
+    animation: jackpot-flash 1s ease infinite;
+    background-size: 200% 200%;
+}
+
+.animate-lever {
+    animation: lever-pull 0.5s ease-in-out;
+}
+
+.animate-bounce-win {
+    animation: bounce-win 0.5s ease-in-out 3;
+}
+
+/* Polaroid Frame Styles */
+.polaroid-frame {
+    background: linear-gradient(180deg, hsl(45 30% 97%) 0%, hsl(45 20% 92%) 100%);
+    padding: 12px 12px 40px 12px;
+    box-shadow: 
+        0 4px 15px hsl(0 0% 0% / 0.4),
+        0 1px 3px hsl(0 0% 0% / 0.2),
+        inset 0 0 30px hsl(45 30% 100% / 0.3);
+    border-radius: 2px;
+}
+
+/* Chrome/Metal Effect */
+.chrome-effect {
+    background: linear-gradient(180deg, 
+        hsl(0 0% 90%) 0%, 
+        hsl(0 0% 60%) 20%, 
+        hsl(0 0% 80%) 40%, 
+        hsl(0 0% 50%) 60%, 
+        hsl(0 0% 70%) 80%, 
+        hsl(0 0% 85%) 100%);
+}
+
+/* Velvet Texture */
+.velvet-texture {
+    background: 
+        radial-gradient(ellipse at 20% 30%, hsl(350 60% 20% / 0.5) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, hsl(350 50% 25% / 0.5) 0%, transparent 50%),
+        linear-gradient(180deg, hsl(350 50% 15%) 0%, hsl(350 60% 10%) 100%);
+}
+
+/* Slot Window Glass Effect */
+.slot-glass {
+    background: linear-gradient(180deg, 
+        hsl(0 0% 100% / 0.1) 0%, 
+        transparent 20%,
+        transparent 80%,
+        hsl(0 0% 0% / 0.2) 100%);
+}
+
+/* Bulb lights around frame */
+.casino-bulb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+}
+
+/* Scrollbar styling for upload area */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: hsl(350 30% 12%);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: hsl(43 70% 40%);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: hsl(43 80% 50%);
 }
