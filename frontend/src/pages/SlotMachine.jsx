@@ -66,21 +66,16 @@ export default function SlotMachine() {
       setLeverPulled(false);
       setIsSpinning(true);
       playSound('spin');
-
-      // Spin duration: 2-4 seconds
-      const spinDuration = 2000 + Math.random() * 2000;
-
-      setTimeout(() => {
-        stopSound('spin');
-        playSound('stop');
-        setIsSpinning(false);
-
-        // Select random photo
-        const randomIndex = Math.floor(Math.random() * photos.length);
-        setSelectedPhoto(photos[randomIndex]);
-      }, spinDuration);
     }, 500);
-  }, [isSpinning, photos, playSound, stopSound]);
+  }, [isSpinning, photos.length, playSound]);
+
+  // Called by SlotReel when animation completes
+  const handleSpinComplete = useCallback((photo) => {
+    stopSound('spin');
+    playSound('stop');
+    setIsSpinning(false);
+    setSelectedPhoto(photo);
+  }, [stopSound, playSound]);
 
   const canSpin = photos.length > 0 && !isSpinning;
 
