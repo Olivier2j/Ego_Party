@@ -1,15 +1,37 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
+// Seeded shuffle function for consistent results
+function shuffleArray(array, seed) {
+  const result = [...array];
+  let currentIndex = result.length;
+  let randomIndex;
+  
+  // Simple seeded random
+  const seededRandom = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+  
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(seededRandom() * currentIndex);
+    currentIndex--;
+    [result[currentIndex], result[randomIndex]] = [result[randomIndex], result[currentIndex]];
+  }
+  
+  return result;
+}
+
 export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
   const [displayIndex, setDisplayIndex] = useState(0);
   const [blurAmount, setBlurAmount] = useState(0);
   const intervalRef = useRef(null);
   const speedRef = useRef(50);
+  const seedRef = useRef(Date.now());
 
-  // Shuffle photos for spinning effect
+  // Shuffle photos for spinning effect with stable seed
   const shuffledPhotos = useMemo(() => {
     if (photos.length < 3) return [...photos, ...photos, ...photos];
-    return [...photos].sort(() => Math.random() - 0.5);
+    return shuffleArray(photos, seedRef.current);
   }, [photos]);
 
   useEffect(() => {
