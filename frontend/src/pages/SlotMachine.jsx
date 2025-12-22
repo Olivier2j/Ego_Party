@@ -135,7 +135,7 @@ export default function SlotMachine() {
           
           {/* Casino Title - Centered on machine */}
           <div className="text-center mb-4 relative z-10">
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl text-primary neon-text-gold tracking-wider">
+            <h1 className={`font-display text-4xl sm:text-5xl lg:text-6xl text-primary tracking-wider ${isCelebrating ? 'animate-title-blink' : 'neon-text-gold'}`}>
               EGO PARTY
             </h1>
             <p className="font-display text-lg sm:text-xl text-fuchsia-400 mt-1 tracking-widest" style={{ textShadow: '0 0 8px hsl(330 100% 60%), 0 0 15px hsl(330 100% 55%)' }}>
