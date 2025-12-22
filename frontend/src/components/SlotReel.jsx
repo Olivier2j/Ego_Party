@@ -141,7 +141,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
             opacity: isSpinning ? 0.5 - normalizedOffset * 0.3 : 0,
           }}
         >
-          <div className="polaroid-frame transform scale-[0.7] flex flex-col" style={{ aspectRatio: '1/1.21' }}>
+          <div className="polaroid-frame transform scale-[0.75] flex flex-col" style={{ width: '250px', aspectRatio: '1/1.21' }}>
             <div className="flex-1 overflow-hidden rounded-sm bg-gray-200">
               <img
                 src={nextPhoto?.src}
