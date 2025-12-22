@@ -115,7 +115,7 @@ export default function SlotMachine() {
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl text-primary neon-text-gold tracking-wider">
               EGO PARTY
             </h1>
-            <p className="font-display text-lg sm:text-xl text-amber-100 mt-1 tracking-widest" style={{ textShadow: '0 0 10px hsl(43 100% 70%), 0 2px 4px rgba(0,0,0,0.5)' }}>
+            <p className="font-display text-lg sm:text-xl text-fuchsia-400 mt-1 tracking-widest" style={{ textShadow: '0 0 8px hsl(330 100% 60%), 0 0 15px hsl(330 100% 55%)' }}>
               SLOT MACHINE
             </p>
           </div>
