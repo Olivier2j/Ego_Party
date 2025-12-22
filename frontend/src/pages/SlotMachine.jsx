@@ -104,21 +104,22 @@ export default function SlotMachine() {
         </Link>
       </div>
 
-      {/* Casino Title */}
-      <div className="text-center mb-8 relative z-10">
-        <h1 className="font-display text-5xl sm:text-7xl lg:text-8xl text-primary neon-text-gold tracking-wider">
-          LUCKY PHOTO
-        </h1>
-        <p className="font-display text-2xl sm:text-3xl text-neon-pink neon-text-pink mt-2 animate-neon-pulse">
-          SLOT MACHINE
-        </p>
-      </div>
-
       {/* Slot Machine Body with Lever */}
       <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
 
         {/* Machine Frame with Bulbs */}
         <div className="relative bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900 rounded-3xl p-6 sm:p-8 shadow-machine border-4 border-amber-600 order-1">
+          
+          {/* Casino Title - Centered on machine */}
+          <div className="text-center mb-4 relative z-10">
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl text-primary neon-text-gold tracking-wider">
+              EGO PARTY
+            </h1>
+            <p className="font-display text-lg sm:text-xl text-neon-pink neon-text-pink mt-1 animate-neon-pulse">
+              SLOT MACHINE
+            </p>
+          </div>
+
           {/* Top Bulbs */}
           <CasinoBulbs position="top" count={9} />
           
