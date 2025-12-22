@@ -177,7 +177,7 @@ export default function PhotoManager() {
               <div
                 key={photo.id}
                 className="group relative polaroid-frame transform hover:rotate-0 hover:scale-105 transition-transform duration-300"
-                style={{ transform: `rotate(${Math.random() * 6 - 3}deg)` }}
+                style={{ transform: `rotate(${getRotation(photo.id)}deg)` }}
               >
                 <div className="aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
                   <img
