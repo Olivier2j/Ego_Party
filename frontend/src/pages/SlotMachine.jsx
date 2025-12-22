@@ -59,7 +59,6 @@ export default function SlotMachine() {
     if (isSpinning || photos.length === 0) return;
 
     setLeverPulled(true);
-    setShowWin(false);
     setSelectedPhoto(null);
     playSound('lever');
 
@@ -79,12 +78,6 @@ export default function SlotMachine() {
         // Select random photo
         const randomIndex = Math.floor(Math.random() * photos.length);
         setSelectedPhoto(photos[randomIndex]);
-
-        // Show win animation
-        setTimeout(() => {
-          setShowWin(true);
-          playSound('win');
-        }, 300);
       }, spinDuration);
     }, 500);
   }, [isSpinning, photos, playSound, stopSound]);
