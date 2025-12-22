@@ -12,13 +12,15 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
   useEffect(() => {
     if (isSpinning && photos.length > 0) {
       startTimeRef.current = Date.now();
-      totalSpinTimeRef.current = 2500 + Math.random() * 1500; // 2.5-4 seconds
+      totalSpinTimeRef.current = 3500 + Math.random() * 1500; // 3.5-5 seconds for longer spin
       
-      const initialSpeed = 50; // Very fast initial speed
+      const initialSpeed = 120; // Much faster initial speed
       const photoHeight = 300; // Height of one photo slot
       
       // RANDOM: Add random starting distance to ensure random final photo
-      const randomExtraPhotos = Math.floor(Math.random() * photos.length * 3) + photos.length;
+      // More photos to scroll through (8-15 full cycles through the photos)
+      const randomCycles = 8 + Math.floor(Math.random() * 8);
+      const randomExtraPhotos = randomCycles * photos.length + Math.floor(Math.random() * photos.length);
       let accumulatedDistance = randomExtraPhotos * photoHeight;
       
       let localIndex = Math.floor(accumulatedDistance / photoHeight) % photos.length;
@@ -29,11 +31,25 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
         const elapsed = Date.now() - startTimeRef.current;
         const progress = Math.min(elapsed / totalSpinTimeRef.current, 1);
         
-        // Easing: very fast at start, progressively slower
-        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        // Custom easing: very fast at start, then progressively slower with a nice deceleration curve
+        // Using a combination of easing functions for slot machine feel
+        let easedProgress;
+        if (progress < 0.3) {
+          // First 30%: stay fast (slight ease)
+          easedProgress = progress * 0.5;
+        } else if (progress < 0.7) {
+          // Middle 40%: gradual slowdown
+          const midProgress = (progress - 0.3) / 0.4;
+          easedProgress = 0.15 + midProgress * 0.45;
+        } else {
+          // Last 30%: strong deceleration to stop
+          const endProgress = (progress - 0.7) / 0.3;
+          const easeOutQuint = 1 - Math.pow(1 - endProgress, 5);
+          easedProgress = 0.6 + easeOutQuint * 0.4;
+        }
         
-        // Speed decreases from initialSpeed to 0
-        const currentSpeed = initialSpeed * (1 - easeOutQuart);
+        // Speed decreases based on eased progress
+        const currentSpeed = initialSpeed * (1 - easedProgress);
         setSpeed(currentSpeed);
         
         if (progress < 1) {
