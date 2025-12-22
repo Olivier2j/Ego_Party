@@ -136,7 +136,7 @@ export default function SlotMachine() {
                 <SlotReel
                   photos={photos}
                   isSpinning={isSpinning}
-                  selectedPhoto={selectedPhoto}
+                  onSpinComplete={handleSpinComplete}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full">
