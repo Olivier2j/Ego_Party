@@ -120,11 +120,11 @@ export default function SlotMachine() {
       </div>
 
       {/* Slot Machine Body with Lever */}
-      <div className="relative flex items-center gap-4">
+      <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
         
         {/* Lever on the LEFT - Clickable */}
         <div 
-          className={`relative cursor-pointer select-none transition-transform hover:scale-105 ${
+          className={`relative cursor-pointer select-none transition-transform hover:scale-105 order-2 sm:order-1 ${
             !canSpin ? 'opacity-50 cursor-not-allowed' : ''
           }`}
           onClick={handleSpin}
@@ -133,39 +133,44 @@ export default function SlotMachine() {
           onKeyDown={(e) => e.key === 'Enter' && handleSpin()}
           aria-label="Tirer le levier pour tourner"
         >
-          {/* Lever Base/Mount */}
-          <div className="relative">
-            {/* Base plate */}
-            <div className="w-12 h-40 chrome-effect rounded-lg border-2 border-gray-500 shadow-lg" />
-            
-            {/* Lever mechanism slot */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-6 h-28 bg-gray-800 rounded-full border border-gray-600" />
-            
-            {/* Lever Arm - Animated */}
-            <div
-              className={`absolute top-2 left-1/2 -translate-x-1/2 transition-transform duration-500 origin-bottom ${
-                leverPulled ? 'rotate-[60deg]' : 'rotate-0'
-              }`}
-            >
-              {/* Arm shaft */}
-              <div className="w-3 h-28 chrome-effect rounded-full border border-gray-400 shadow-md" />
+          {/* Mobile: Horizontal lever, Desktop: Vertical lever */}
+          <div className="relative flex sm:flex-col items-center gap-2">
+            {/* Lever Base/Mount */}
+            <div className="relative">
+              {/* Base plate - horizontal on mobile, vertical on desktop */}
+              <div className="w-32 h-12 sm:w-12 sm:h-40 chrome-effect rounded-lg border-2 border-gray-500 shadow-lg" />
               
-              {/* Lever Ball/Handle */}
-              <div 
-                className={`w-14 h-14 -mt-2 -ml-[22px] rounded-full shadow-xl border-4 transition-all duration-300 ${
-                  canSpin 
-                    ? 'bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-red-300 hover:from-red-300 hover:via-red-400 hover:to-red-600' 
-                    : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 border-gray-400'
-                }`}
+              {/* Lever mechanism slot */}
+              <div className="absolute top-1/2 -translate-y-1/2 left-4 sm:left-1/2 sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 w-20 h-6 sm:w-6 sm:h-28 bg-gray-800 rounded-full border border-gray-600" />
+              
+              {/* Lever Arm - Animated */}
+              <div
+                className={`absolute top-1/2 -translate-y-1/2 left-2 sm:left-1/2 sm:-translate-x-1/2 sm:top-2 sm:translate-y-0 transition-transform duration-500 ${
+                  leverPulled 
+                    ? 'translate-x-16 sm:translate-x-0 sm:rotate-[60deg]' 
+                    : 'translate-x-0 sm:translate-x-0 sm:rotate-0'
+                } sm:origin-bottom`}
               >
-                {/* Shine effect on ball */}
-                <div className="absolute top-2 left-2 w-4 h-4 bg-white/40 rounded-full blur-sm" />
+                {/* Arm shaft - horizontal on mobile, vertical on desktop */}
+                <div className="w-20 h-3 sm:w-3 sm:h-28 chrome-effect rounded-full border border-gray-400 shadow-md" />
+                
+                {/* Lever Ball/Handle */}
+                <div 
+                  className={`absolute -right-5 top-1/2 -translate-y-1/2 sm:relative sm:right-auto sm:top-auto sm:translate-y-0 sm:-mt-2 sm:-ml-[22px] w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-xl border-4 transition-all duration-300 ${
+                    canSpin 
+                      ? 'bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-red-300 hover:from-red-300 hover:via-red-400 hover:to-red-600' 
+                      : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 border-gray-400'
+                  }`}
+                >
+                  {/* Shine effect on ball */}
+                  <div className="absolute top-2 left-2 w-3 h-3 sm:w-4 sm:h-4 bg-white/40 rounded-full blur-sm" />
+                </div>
               </div>
             </div>
           </div>
           
           {/* Label under lever */}
-          <p className={`font-display text-sm mt-3 text-center transition-colors ${
+          <p className={`font-display text-sm mt-2 sm:mt-3 text-center transition-colors ${
             canSpin ? 'text-primary' : 'text-muted-foreground'
           }`}>
             {isSpinning ? 'ATTENDRE...' : 'TIRER'}
@@ -173,7 +178,7 @@ export default function SlotMachine() {
         </div>
 
         {/* Machine Frame with Bulbs */}
-        <div className="relative bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900 rounded-3xl p-6 sm:p-8 shadow-machine border-4 border-amber-600">
+        <div className="relative bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900 rounded-3xl p-6 sm:p-8 shadow-machine border-4 border-amber-600 order-1 sm:order-2">
           {/* Top Bulbs */}
           <CasinoBulbs position="top" count={9} />
           
