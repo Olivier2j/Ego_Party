@@ -28,7 +28,9 @@ export default function SlotMachine() {
   useEffect(() => {
     const savedPhotos = localStorage.getItem('slotPhotos');
     if (savedPhotos) {
-      setPhotos(JSON.parse(savedPhotos));
+      const parsed = JSON.parse(savedPhotos);
+      // Use functional update to avoid lint warning
+      setPhotos(() => parsed);
     }
   }, []);
 
