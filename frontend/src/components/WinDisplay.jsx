@@ -1,9 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Button } from './ui/button';
 import { X, Download, Sparkles } from 'lucide-react';
 
+// Generate confetti particles with stable positions
+function generateConfetti(count) {
+  const particles = [];
+  for (let i = 0; i < count; i++) {
+    const seed = i * 12345;
+    particles.push({
+      id: i,
+      left: ((seed * 9301 + 49297) % 233280) / 233280 * 100,
+      colorIndex: i % 4,
+      duration: 2 + ((seed * 7919) % 2000) / 1000,
+      delay: ((seed * 3571) % 500) / 1000,
+    });
+  }
+  return particles;
+}
+
+const CONFETTI_COLORS = ['#FFD700', '#FF69B4', '#00FFFF', '#FF0000'];
+
 export default function WinDisplay({ photo, onClose }) {
   const [showConfetti, setShowConfetti] = useState(false);
+  
+  const confettiParticles = useMemo(() => generateConfetti(50), []);
 
   useEffect(() => {
     setShowConfetti(true);
