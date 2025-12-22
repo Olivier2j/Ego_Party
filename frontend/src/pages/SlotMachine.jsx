@@ -182,6 +182,7 @@ export default function SlotMachine() {
                   photos={photos}
                   isSpinning={isSpinning}
                   onSpinComplete={handleSpinComplete}
+                  onPhotoChange={playClickSound}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full">
