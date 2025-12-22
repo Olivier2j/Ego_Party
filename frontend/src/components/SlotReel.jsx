@@ -105,11 +105,11 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
         <div 
           className="absolute left-1/2 -translate-x-1/2 transition-opacity"
           style={{ 
-            top: '-240px',
+            top: '-280px',
             opacity: isSpinning ? 0.5 + normalizedOffset * 0.3 : 0,
           }}
         >
-          <div className="polaroid-frame transform scale-[0.7] flex flex-col" style={{ aspectRatio: '1/1.21' }}>
+          <div className="polaroid-frame transform scale-[0.75] flex flex-col" style={{ width: '250px', aspectRatio: '1/1.21' }}>
             <div className="flex-1 overflow-hidden rounded-sm bg-gray-200">
               <img
                 src={prevPhoto?.src}
@@ -123,7 +123,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
         {/* Current photo (center) */}
         <div className={`polaroid-frame transform transition-transform duration-300 flex flex-col ${
           !isSpinning ? 'scale-100' : 'scale-95'
-        }`} style={{ width: '220px', aspectRatio: '1/1.21' }}>
+        }`} style={{ width: '250px', aspectRatio: '1/1.21' }}>
           <div className="flex-1 overflow-hidden rounded-sm bg-gray-200">
             <img
               src={displayPhoto?.src}
@@ -137,7 +137,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
         <div 
           className="absolute left-1/2 -translate-x-1/2 transition-opacity"
           style={{ 
-            bottom: '-240px',
+            bottom: '-280px',
             opacity: isSpinning ? 0.5 - normalizedOffset * 0.3 : 0,
           }}
         >
