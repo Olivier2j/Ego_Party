@@ -123,7 +123,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
         {/* Current photo (center) */}
         <div className={`polaroid-frame transform transition-transform duration-300 flex flex-col ${
           !isSpinning ? 'scale-100' : 'scale-95'
-        }`} style={{ width: '250px', aspectRatio: '1/1.21' }}>
+        }`} style={{ width: '260px', aspectRatio: '1/1.21' }}>
           <div className="flex-1 overflow-hidden rounded-sm bg-gray-200">
             <img
               src={displayPhoto?.src}
