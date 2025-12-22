@@ -1,71 +1,56 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
-  const [visiblePhotos, setVisiblePhotos] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [offset, setOffset] = useState(0);
+  const [speed, setSpeed] = useState(0);
   const animationRef = useRef(null);
-  const speedRef = useRef(0);
   const startTimeRef = useRef(0);
   const totalSpinTimeRef = useRef(3000);
-
-  // Initialize visible photos
-  useEffect(() => {
-    if (photos.length > 0) {
-      // Create a list of photos to display (current + surrounding)
-      updateVisiblePhotos(0);
-    }
-  }, [photos]);
-
-  const updateVisiblePhotos = (index) => {
-    if (photos.length === 0) return;
-    
-    const idx = ((index % photos.length) + photos.length) % photos.length;
-    const prevIdx = ((idx - 1) % photos.length + photos.length) % photos.length;
-    const nextIdx = (idx + 1) % photos.length;
-    
-    setVisiblePhotos([
-      photos[prevIdx],
-      photos[idx],
-      photos[nextIdx],
-    ]);
-  };
+  const lastIndexRef = useRef(0);
 
   useEffect(() => {
     if (isSpinning && photos.length > 0) {
       startTimeRef.current = Date.now();
       totalSpinTimeRef.current = 2500 + Math.random() * 1500; // 2.5-4 seconds
-      speedRef.current = 40; // Initial very fast speed (pixels per frame)
+      lastIndexRef.current = 0;
       
-      let currentIndex = 0;
-      let accumulatedOffset = 0;
-      const photoHeight = 280; // Height of one photo slot
+      const initialSpeed = 50; // Very fast initial speed
+      const photoHeight = 300; // Height of one photo slot
+      let accumulatedDistance = 0;
+      let localIndex = 0;
       
       const animate = () => {
         const elapsed = Date.now() - startTimeRef.current;
         const progress = Math.min(elapsed / totalSpinTimeRef.current, 1);
         
-        // Easing function: start fast, slow down exponentially
-        // Using cubic easing out for smooth deceleration
-        const easeOut = 1 - Math.pow(1 - progress, 3);
+        // Easing: very fast at start, progressively slower
+        // Using custom easing for slot machine feel
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
         
-        // Speed decreases from 40 to near 0
-        const currentSpeed = speedRef.current * (1 - easeOut);
+        // Speed decreases from initialSpeed to 0
+        const currentSpeed = initialSpeed * (1 - easeOutQuart);
+        setSpeed(currentSpeed);
         
         if (progress < 1) {
-          accumulatedOffset += Math.max(currentSpeed, 0.5);
+          accumulatedDistance += currentSpeed;
           
-          // When we've scrolled past one photo height, move to next photo
-          if (accumulatedOffset >= photoHeight) {
-            accumulatedOffset -= photoHeight;
-            currentIndex++;
-            updateVisiblePhotos(currentIndex);
+          // Calculate current offset within one photo height
+          const newOffset = accumulatedDistance % photoHeight;
+          setOffset(newOffset);
+          
+          // Update photo index when we pass a threshold
+          const newIndex = Math.floor(accumulatedDistance / photoHeight);
+          if (newIndex !== localIndex) {
+            localIndex = newIndex;
+            setCurrentIndex(localIndex % photos.length);
           }
           
-          setOffset(accumulatedOffset);
           animationRef.current = requestAnimationFrame(animate);
         } else {
           // Animation complete - snap to final position
           setOffset(0);
+          setSpeed(0);
         }
       };
       
@@ -77,62 +62,69 @@ export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
         }
       };
     } else {
-      // Reset when not spinning
       setOffset(0);
-      if (selectedPhoto) {
-        const idx = photos.findIndex(p => p.id === selectedPhoto.id);
-        if (idx !== -1) {
-          updateVisiblePhotos(idx);
-        }
-      }
+      setSpeed(0);
     }
-  }, [isSpinning, photos, selectedPhoto]);
+  }, [isSpinning, photos.length]);
 
   // Update display when selected photo changes (after spin stops)
   useEffect(() => {
     if (!isSpinning && selectedPhoto && photos.length > 0) {
       const idx = photos.findIndex(p => p.id === selectedPhoto.id);
       if (idx !== -1) {
-        updateVisiblePhotos(idx);
+        setCurrentIndex(idx);
       }
     }
   }, [selectedPhoto, isSpinning, photos]);
 
-  if (photos.length === 0 || visiblePhotos.length === 0) return null;
+  if (photos.length === 0) return null;
 
-  const currentPhoto = !isSpinning && selectedPhoto ? selectedPhoto : visiblePhotos[1];
+  // Get photos to display
+  const getPhotoAtIndex = (idx) => {
+    const normalizedIdx = ((idx % photos.length) + photos.length) % photos.length;
+    return photos[normalizedIdx];
+  };
 
-  // Calculate blur based on speed
-  const blurAmount = isSpinning ? Math.min(offset / 30, 8) : 0;
+  const displayPhoto = !isSpinning && selectedPhoto ? selectedPhoto : getPhotoAtIndex(currentIndex);
+  const prevPhoto = getPhotoAtIndex(currentIndex - 1);
+  const nextPhoto = getPhotoAtIndex(currentIndex + 1);
+
+  // Calculate blur based on speed (more blur when faster)
+  const blurAmount = Math.min(speed / 6, 6);
+  
+  // Normalize offset for smooth animation (0 to 1)
+  const normalizedOffset = offset / 300;
 
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-      {/* Scrolling container */}
+      {/* Scrolling reel container */}
       <div 
-        className="relative transition-[filter] duration-100"
+        className="relative"
         style={{ 
-          transform: `translateY(${offset}px)`,
+          transform: `translateY(${offset * 0.3}px)`,
           filter: `blur(${blurAmount}px)`,
+          transition: isSpinning ? 'none' : 'filter 0.3s ease-out',
         }}
       >
-        {/* Previous photo (top, moving down) */}
-        {isSpinning && (
-          <div 
-            className="absolute left-1/2 -translate-x-1/2 opacity-40"
-            style={{ top: '-260px' }}
-          >
-            <div className="polaroid-frame transform scale-75">
-              <div className="w-44 sm:w-52 aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
-                <img
-                  src={visiblePhotos[0]?.src}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="h-6" />
+        {/* Previous photo (entering from top) */}
+        <div 
+          className="absolute left-1/2 -translate-x-1/2 transition-opacity"
+          style={{ 
+            top: '-280px',
+            opacity: isSpinning ? 0.5 + normalizedOffset * 0.3 : 0,
+          }}
+        >
+          <div className="polaroid-frame transform scale-[0.7]">
+            <div className="w-48 sm:w-56 aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
+              <img
+                src={prevPhoto?.src}
+                alt=""
+                className="w-full h-full object-cover"
+              />
             </div>
+            <div className="h-6" />
           </div>
-        )}
+        </div>
 
         {/* Current photo (center) */}
         <div className={`polaroid-frame transform transition-transform duration-300 ${
@@ -140,7 +132,7 @@ export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
         }`}>
           <div className="w-48 sm:w-56 aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
             <img
-              src={currentPhoto?.src}
+              src={displayPhoto?.src}
               alt=""
               className="w-full h-full object-cover"
             />
@@ -148,35 +140,38 @@ export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
           <div className="h-8" />
         </div>
 
-        {/* Next photo (bottom, entering from below) */}
-        {isSpinning && (
-          <div 
-            className="absolute left-1/2 -translate-x-1/2 opacity-40"
-            style={{ bottom: '-260px' }}
-          >
-            <div className="polaroid-frame transform scale-75">
-              <div className="w-44 sm:w-52 aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
-                <img
-                  src={visiblePhotos[2]?.src}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="h-6" />
+        {/* Next photo (exiting to bottom) */}
+        <div 
+          className="absolute left-1/2 -translate-x-1/2 transition-opacity"
+          style={{ 
+            bottom: '-280px',
+            opacity: isSpinning ? 0.5 - normalizedOffset * 0.3 : 0,
+          }}
+        >
+          <div className="polaroid-frame transform scale-[0.7]">
+            <div className="w-48 sm:w-56 aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
+              <img
+                src={nextPhoto?.src}
+                alt=""
+                className="w-full h-full object-cover"
+              />
             </div>
+            <div className="h-6" />
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Top shadow for depth effect */}
-      {isSpinning && (
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-10" />
-      )}
+      {/* Top shadow overlay */}
+      <div 
+        className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none z-10 transition-opacity duration-300"
+        style={{ opacity: isSpinning ? 1 : 0 }}
+      />
       
-      {/* Bottom shadow for depth effect */}
-      {isSpinning && (
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-10" />
-      )}
+      {/* Bottom shadow overlay */}
+      <div 
+        className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/70 to-transparent pointer-events-none z-10 transition-opacity duration-300"
+        style={{ opacity: isSpinning ? 1 : 0 }}
+      />
     </div>
   );
 }
