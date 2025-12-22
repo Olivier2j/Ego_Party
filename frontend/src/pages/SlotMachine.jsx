@@ -18,8 +18,10 @@ export default function SlotMachine() {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [leverPulled, setLeverPulled] = useState(false);
+  const [isCelebrating, setIsCelebrating] = useState(false);
   
   const audioRefs = useRef({});
+  const celebrationTimerRef = useRef(null);
 
   // Load photos from localStorage
   useEffect(() => {
