@@ -131,8 +131,8 @@ export default function SlotMachine() {
             {/* Glass Reflection */}
             <div className="absolute inset-0 slot-glass rounded-xl pointer-events-none z-10" />
             
-            {/* Polaroid Reel */}
-            <div className="relative w-64 sm:w-80 h-80 sm:h-96 overflow-hidden rounded-lg bg-black">
+            {/* Polaroid Reel - adjusted for 1:1.21 ratio */}
+            <div className="relative w-64 sm:w-72 overflow-hidden rounded-lg bg-black flex items-center justify-center" style={{ height: '340px' }}>
               {photos.length > 0 ? (
                 <SlotReel
                   photos={photos}
