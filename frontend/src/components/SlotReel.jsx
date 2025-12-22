@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
+export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoChange }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [offset, setOffset] = useState(0);
   const [speed, setSpeed] = useState(0);
