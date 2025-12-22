@@ -7,12 +7,13 @@ const COLORS = [
   'text-neon-red',
 ];
 
-export default function CasinoBulbs({ position, count = 7 }) {
+export default function CasinoBulbs({ position, count = 7, isSpinning = false }) {
   const bulbs = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
       color: COLORS[i % COLORS.length],
       delay: i * 0.1,
+      blinkDelay: (i * 0.05) % 0.3, // Fast staggered blink
     }));
   }, [count]);
 
@@ -28,9 +29,9 @@ export default function CasinoBulbs({ position, count = 7 }) {
       {bulbs.map((bulb) => (
         <div
           key={bulb.id}
-          className={`casino-bulb ${bulb.color} animate-neon-pulse`}
+          className={`casino-bulb ${bulb.color} ${isSpinning ? 'animate-bulb-blink' : 'animate-neon-pulse'}`}
           style={{
-            animationDelay: `${bulb.delay}s`,
+            animationDelay: isSpinning ? `${bulb.blinkDelay}s` : `${bulb.delay}s`,
             backgroundColor: 'currentColor',
           }}
         />
