@@ -127,12 +127,12 @@ export default function SlotMachine() {
           <div className="chrome-effect h-6 rounded-t-xl mb-4 border-b-2 border-gray-600" />
 
           {/* Slot Window */}
-          <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-xl p-2 shadow-inner-slot border-4 border-gray-700">
+          <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-xl p-1 shadow-inner-slot border-4 border-gray-700">
             {/* Glass Reflection */}
             <div className="absolute inset-0 slot-glass rounded-xl pointer-events-none z-10" />
             
             {/* Polaroid Reel - fills the space */}
-            <div className="relative w-64 sm:w-72 overflow-hidden rounded-lg bg-black flex items-center justify-center" style={{ height: '330px' }}>
+            <div className="relative overflow-hidden rounded-lg bg-black flex items-center justify-center" style={{ width: '270px', height: '330px' }}>
               {photos.length > 0 ? (
                 <SlotReel
                   photos={photos}
