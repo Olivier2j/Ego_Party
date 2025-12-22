@@ -105,41 +105,39 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
         <div 
           className="absolute left-1/2 -translate-x-1/2 transition-opacity"
           style={{ 
-            top: '-280px',
+            top: '-240px',
             opacity: isSpinning ? 0.5 + normalizedOffset * 0.3 : 0,
           }}
         >
-          <div className="polaroid-frame transform scale-[0.7]">
-            <div className="w-48 sm:w-56 aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
+          <div className="polaroid-frame transform scale-[0.7] flex flex-col" style={{ aspectRatio: '1/1.21' }}>
+            <div className="flex-1 overflow-hidden rounded-sm bg-gray-200">
               <img
                 src={prevPhoto?.src}
                 alt=""
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="h-6" />
           </div>
         </div>
 
         {/* Current photo (center) */}
-        <div className={`polaroid-frame transform transition-transform duration-300 ${
+        <div className={`polaroid-frame transform transition-transform duration-300 flex flex-col ${
           !isSpinning ? 'scale-100' : 'scale-95'
-        }`}>
-          <div className="w-48 sm:w-56 aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
+        }`} style={{ width: '220px', aspectRatio: '1/1.21' }}>
+          <div className="flex-1 overflow-hidden rounded-sm bg-gray-200">
             <img
               src={displayPhoto?.src}
               alt=""
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="h-8" />
         </div>
 
         {/* Next photo (exiting to bottom) */}
         <div 
           className="absolute left-1/2 -translate-x-1/2 transition-opacity"
           style={{ 
-            bottom: '-280px',
+            bottom: '-240px',
             opacity: isSpinning ? 0.5 - normalizedOffset * 0.3 : 0,
           }}
         >
