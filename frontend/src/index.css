@@ -211,6 +211,23 @@
     animation: neon-flicker 3s linear infinite;
 }
 
+.animate-bulb-blink {
+    animation: bulb-blink 0.15s ease-in-out infinite alternate;
+}
+
+@keyframes bulb-blink {
+    0% {
+        opacity: 0.3;
+        transform: scale(0.8);
+        filter: brightness(0.5);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1.2);
+        filter: brightness(1.5);
+    }
+}
+
 .animate-jackpot {
     animation: jackpot-flash 1s ease infinite;
     background-size: 200% 200%;
