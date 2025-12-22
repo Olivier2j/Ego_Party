@@ -66,7 +66,8 @@ export default function PhotoManager() {
     e.preventDefault();
     setIsDragging(false);
     handleFileChange(e.dataTransfer.files);
-  }, [photos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photos, savePhotos]);
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
