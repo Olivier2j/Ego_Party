@@ -66,6 +66,11 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             const photoIndex = localIndex % photos.length;
             setCurrentIndex(photoIndex);
             finalIndexRef.current = photoIndex;
+            
+            // Play click sound on each photo change
+            if (onPhotoChange) {
+              onPhotoChange();
+            }
           }
           
           animationRef.current = requestAnimationFrame(animate);
