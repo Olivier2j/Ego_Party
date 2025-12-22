@@ -16,8 +16,14 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
       
       const initialSpeed = 50; // Very fast initial speed
       const photoHeight = 300; // Height of one photo slot
-      let accumulatedDistance = 0;
-      let localIndex = currentIndex; // Start from current position
+      
+      // RANDOM: Add random starting distance to ensure random final photo
+      const randomExtraPhotos = Math.floor(Math.random() * photos.length * 3) + photos.length;
+      let accumulatedDistance = randomExtraPhotos * photoHeight;
+      
+      let localIndex = Math.floor(accumulatedDistance / photoHeight) % photos.length;
+      setCurrentIndex(localIndex);
+      finalIndexRef.current = localIndex;
       
       const animate = () => {
         const elapsed = Date.now() - startTimeRef.current;
