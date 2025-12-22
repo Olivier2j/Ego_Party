@@ -51,18 +51,16 @@ export default function WinDisplay({ photo, onClose }) {
       {/* Confetti */}
       {showConfetti && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {Array.from({ length: 50 }).map((_, i) => (
+          {confettiParticles.map((particle) => (
             <div
-              key={i}
+              key={particle.id}
               className="absolute w-3 h-3 rounded-sm"
               style={{
-                left: `${Math.random() * 100}%`,
+                left: `${particle.left}%`,
                 top: '-20px',
-                backgroundColor: ['#FFD700', '#FF69B4', '#00FFFF', '#FF0000'][
-                  Math.floor(Math.random() * 4)
-                ],
-                animation: `confetti-fall ${2 + Math.random() * 2}s linear forwards`,
-                animationDelay: `${Math.random() * 0.5}s`,
+                backgroundColor: CONFETTI_COLORS[particle.colorIndex],
+                animation: `confetti-fall ${particle.duration}s linear forwards`,
+                animationDelay: `${particle.delay}s`,
               }}
             />
           ))}
