@@ -225,10 +225,10 @@
     animation: bounce-win 0.5s ease-in-out 3;
 }
 
-/* Polaroid Frame Styles */
+/* Polaroid Frame Styles - Ratio total 1:1.21 */
 .polaroid-frame {
     background: linear-gradient(180deg, hsl(45 30% 97%) 0%, hsl(45 20% 92%) 100%);
-    padding: 12px 12px 40px 12px;
+    padding: 10px 10px 32px 10px;
     box-shadow: 
         0 4px 15px hsl(0 0% 0% / 0.4),
         0 1px 3px hsl(0 0% 0% / 0.2),
