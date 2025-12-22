@@ -88,11 +88,10 @@
 /* Neon Text Effect */
 .neon-text-gold {
     text-shadow: 
-        0 0 7px hsl(43 100% 50%),
-        0 0 10px hsl(43 100% 50%),
-        0 0 21px hsl(43 100% 50%),
-        0 0 42px hsl(43 80% 50%),
-        0 0 82px hsl(43 80% 50%);
+        0 0 5px hsl(43 100% 50%),
+        0 0 8px hsl(43 100% 50%),
+        0 0 15px hsl(43 100% 50%),
+        0 0 30px hsl(43 80% 50%);
 }
 
 .neon-text-pink {
