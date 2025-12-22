@@ -4,14 +4,12 @@ import { Button } from '../components/ui/button';
 import { Settings, Volume2, VolumeX } from 'lucide-react';
 import SlotReel from '../components/SlotReel';
 import CasinoBulbs from '../components/CasinoBulbs';
-import WinDisplay from '../components/WinDisplay';
 
-// Sound URLs for retro slot machine effects
+// Sound URLs - Wheel spinning sound like "The Price is Right"
 const SOUNDS = {
-  spin: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
-  stop: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
-  win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
-  lever: 'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3',
+  spin: 'https://assets.mixkit.co/active_storage/sfx/146/146-preview.mp3', // Wheel spinning/clicking sound
+  stop: 'https://assets.mixkit.co/active_storage/sfx/220/220-preview.mp3', // Soft bell ding
+  lever: 'https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3', // Click sound
 };
 
 export default function SlotMachine() {
