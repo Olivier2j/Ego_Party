@@ -1,114 +1,89 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
-// Seeded shuffle function for consistent results
-function shuffleArray(array, seed) {
-  const result = [...array];
-  let currentIndex = result.length;
-  let randomIndex;
-  
-  // Simple seeded random
-  const seededRandom = () => {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280;
-  };
-  
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(seededRandom() * currentIndex);
-    currentIndex--;
-    [result[currentIndex], result[randomIndex]] = [result[randomIndex], result[currentIndex]];
-  }
-  
-  return result;
-}
-
 export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
   const [displayIndex, setDisplayIndex] = useState(0);
   const [blurAmount, setBlurAmount] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
   const intervalRef = useRef(null);
-  const speedRef = useRef(50);
-  const seedRef = useRef(Date.now());
+  const animationRef = useRef(null);
+  const speedRef = useRef(15);
 
-  // Shuffle photos for spinning effect with stable seed
-  const shuffledPhotos = useMemo(() => {
-    if (photos.length < 3) return [...photos, ...photos, ...photos];
-    return shuffleArray(photos, seedRef.current);
+  // Create extended photo list for smooth scrolling
+  const extendedPhotos = useMemo(() => {
+    if (photos.length === 0) return [];
+    // Triple the photos for seamless looping
+    return [...photos, ...photos, ...photos];
   }, [photos]);
 
   useEffect(() => {
-    if (isSpinning) {
-      speedRef.current = 50;
-      setBlurAmount(8);
-
-      intervalRef.current = setInterval(() => {
-        setDisplayIndex((prev) => (prev + 1) % shuffledPhotos.length);
-      }, speedRef.current);
+    if (isSpinning && photos.length > 0) {
+      speedRef.current = 15; // Fast initial speed
+      setBlurAmount(6);
+      
+      let currentOffset = 0;
+      const photoHeight = 320; // Approximate height of polaroid
+      const totalHeight = photos.length * photoHeight;
+      
+      // Animation loop for smooth scrolling top to bottom
+      const animate = () => {
+        currentOffset += speedRef.current;
+        
+        // Reset offset when we've scrolled through one set
+        if (currentOffset >= totalHeight) {
+          currentOffset = currentOffset % totalHeight;
+        }
+        
+        setOffsetY(currentOffset);
+        setDisplayIndex(Math.floor(currentOffset / photoHeight) % photos.length);
+        
+        animationRef.current = requestAnimationFrame(animate);
+      };
+      
+      animationRef.current = requestAnimationFrame(animate);
 
       // Gradually slow down
-      const slowDownInterval = setInterval(() => {
-        speedRef.current += 20;
-        setBlurAmount((prev) => Math.max(0, prev - 0.5));
-
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = setInterval(() => {
-            setDisplayIndex((prev) => (prev + 1) % shuffledPhotos.length);
-          }, speedRef.current);
-        }
-      }, 200);
+      intervalRef.current = setInterval(() => {
+        speedRef.current = Math.max(speedRef.current * 0.95, 0);
+        setBlurAmount((prev) => Math.max(0, prev - 0.3));
+      }, 100);
 
       return () => {
-        clearInterval(slowDownInterval);
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
         }
       };
     } else {
+      // When not spinning, reset
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
       setBlurAmount(0);
+      setOffsetY(0);
     }
-  }, [isSpinning, shuffledPhotos.length]);
+  }, [isSpinning, photos.length]);
 
-  // When spinning stops, show selected photo
-  useEffect(() => {
-    if (!isSpinning && selectedPhoto) {
-      const index = shuffledPhotos.findIndex((p) => p.id === selectedPhoto.id);
-      if (index !== -1) {
-        setDisplayIndex(index);
-      }
-    }
-  }, [isSpinning, selectedPhoto, shuffledPhotos]);
+  // Get current photo to display
+  const currentPhoto = selectedPhoto && !isSpinning ? selectedPhoto : photos[displayIndex] || photos[0];
 
-  const currentPhoto = selectedPhoto && !isSpinning ? selectedPhoto : shuffledPhotos[displayIndex];
-  const prevPhoto = shuffledPhotos[(displayIndex - 1 + shuffledPhotos.length) % shuffledPhotos.length];
-  const nextPhoto = shuffledPhotos[(displayIndex + 1) % shuffledPhotos.length];
+  if (photos.length === 0) return null;
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      {/* Reel container with vertical scroll effect */}
+    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+      {/* Single polaroid display */}
       <div
-        className="relative transition-all duration-100"
-        style={{ filter: `blur(${blurAmount}px)` }}
+        className="relative transition-all duration-150"
+        style={{ 
+          filter: `blur(${blurAmount}px)`,
+          transform: isSpinning ? `translateY(${(offsetY % 20) - 10}px)` : 'translateY(0)'
+        }}
       >
-        {/* Previous photo (above, faded) */}
-        <div
-          className={`absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-56 opacity-30 transition-opacity ${
-            isSpinning ? 'opacity-20' : 'opacity-30'
-          }`}
-        >
-          <div className="polaroid-frame transform scale-75">
-            <div className="aspect-[3/4] overflow-hidden rounded-sm">
-              <img
-                src={prevPhoto?.src}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Current photo (center, main) */}
+        {/* Main photo in polaroid frame */}
         <div
           className={`polaroid-frame transform transition-transform duration-300 ${
             !isSpinning && selectedPhoto ? 'scale-100' : 'scale-95'
@@ -124,28 +99,11 @@ export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
           {/* Polaroid bottom area */}
           <div className="h-8" />
         </div>
-
-        {/* Next photo (below, faded) */}
-        <div
-          className={`absolute -bottom-24 left-1/2 -translate-x-1/2 w-48 h-56 opacity-30 transition-opacity ${
-            isSpinning ? 'opacity-20' : 'opacity-30'
-          }`}
-        >
-          <div className="polaroid-frame transform scale-75">
-            <div className="aspect-[3/4] overflow-hidden rounded-sm">
-              <img
-                src={nextPhoto?.src}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Spinning overlay effect */}
+      {/* Spinning overlay effect - motion blur from top */}
       {isSpinning && (
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/40 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/30 pointer-events-none" />
       )}
     </div>
   );
