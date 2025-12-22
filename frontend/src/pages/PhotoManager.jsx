@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { ArrowLeft, Upload, Trash2, Image, X } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Generate stable rotations for photos
+function getRotation(id) {
+  const seed = typeof id === 'number' ? id : String(id).split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  return ((seed * 9301 + 49297) % 233280) / 233280 * 6 - 3;
+}
 
 export default function PhotoManager() {
   const [photos, setPhotos] = useState([]);
