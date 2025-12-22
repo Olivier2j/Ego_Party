@@ -60,6 +60,12 @@ export default function SlotMachine() {
   const handleSpin = useCallback(() => {
     if (isSpinning || photos.length === 0) return;
 
+    // Stop any ongoing celebration
+    if (celebrationTimerRef.current) {
+      clearTimeout(celebrationTimerRef.current);
+      setIsCelebrating(false);
+    }
+
     setLeverPulled(true);
     setSelectedPhoto(null);
     playSound('lever');
@@ -77,7 +83,22 @@ export default function SlotMachine() {
     playSound('stop');
     setIsSpinning(false);
     setSelectedPhoto(photo);
+    
+    // Start celebration (title blinking) for 2.5 seconds
+    setIsCelebrating(true);
+    celebrationTimerRef.current = setTimeout(() => {
+      setIsCelebrating(false);
+    }, 2500);
   }, [stopSound, playSound]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (celebrationTimerRef.current) {
+        clearTimeout(celebrationTimerRef.current);
+      }
+    };
+  }, []);
 
   const canSpin = photos.length > 0 && !isSpinning;
 
