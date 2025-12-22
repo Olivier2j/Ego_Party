@@ -192,7 +192,7 @@ export default function SlotMachine() {
 
         {/* Lever on the RIGHT (desktop) / BOTTOM (mobile) - Clickable */}
         <div 
-          className={`relative cursor-pointer select-none transition-transform hover:scale-110 order-2 ${
+          className={`relative cursor-pointer select-none transition-transform hover:scale-105 order-2 ${
             !canSpin ? 'opacity-50 cursor-not-allowed' : ''
           }`}
           onClick={handleSpin}
@@ -201,32 +201,40 @@ export default function SlotMachine() {
           onKeyDown={(e) => e.key === 'Enter' && handleSpin()}
           aria-label="Tirer le levier pour tourner"
         >
-          {/* Simple Red Button */}
+          {/* Lever with frame and red button */}
           <div className="relative">
-            {/* Button animated on press */}
-            <div
-              className={`transition-transform duration-500 ${
-                leverPulled 
-                  ? 'translate-y-4 scale-90' 
-                  : 'translate-y-0 scale-100'
-              }`}
-            >
-              {/* Red Button */}
-              <div 
-                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full shadow-xl border-4 transition-all duration-300 relative ${
-                  canSpin 
-                    ? 'bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-red-300 hover:from-red-300 hover:via-red-400 hover:to-red-600 hover:shadow-[0_0_25px_rgba(239,68,68,0.6)]' 
-                    : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 border-gray-400'
+            {/* Fixed Frame/Mount - same color as machine (amber/gold) */}
+            <div className="relative">
+              {/* Base plate - amber/gold color matching the machine */}
+              <div className="w-20 h-14 sm:w-16 sm:h-36 bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800 rounded-xl border-4 border-amber-500 shadow-lg" />
+              
+              {/* Slot/track for the button - darker inset */}
+              <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 sm:top-4 sm:translate-y-0 w-12 h-8 sm:w-10 sm:h-24 bg-amber-900/80 rounded-lg border-2 border-amber-950/50 shadow-inner" />
+              
+              {/* Red Button - animated */}
+              <div
+                className={`absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 sm:top-2 sm:translate-y-0 transition-transform duration-500 ${
+                  leverPulled 
+                    ? 'sm:translate-y-16 scale-95' 
+                    : 'sm:translate-y-0 scale-100'
                 }`}
-                style={{
-                  boxShadow: canSpin 
-                    ? '0 8px 20px rgba(0,0,0,0.4), inset 0 -4px 10px rgba(0,0,0,0.3), 0 0 15px rgba(239,68,68,0.3)' 
-                    : '0 8px 20px rgba(0,0,0,0.4), inset 0 -4px 10px rgba(0,0,0,0.3)'
-                }}
               >
-                {/* Shine effect on button */}
-                <div className="absolute top-2 left-3 w-6 h-6 bg-white/40 rounded-full blur-sm" />
-                <div className="absolute top-4 left-5 w-2 h-2 bg-white/60 rounded-full" />
+                <div 
+                  className={`w-14 h-14 sm:w-12 sm:h-12 rounded-full shadow-xl border-4 transition-all duration-300 relative ${
+                    canSpin 
+                      ? 'bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-red-300 hover:from-red-300 hover:via-red-400 hover:to-red-600 hover:shadow-[0_0_25px_rgba(239,68,68,0.6)]' 
+                      : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 border-gray-400'
+                  }`}
+                  style={{
+                    boxShadow: canSpin 
+                      ? '0 6px 15px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.3), 0 0 12px rgba(239,68,68,0.3)' 
+                      : '0 6px 15px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.3)'
+                  }}
+                >
+                  {/* Shine effect on button */}
+                  <div className="absolute top-1.5 left-2 w-4 h-4 bg-white/40 rounded-full blur-sm" />
+                  <div className="absolute top-3 left-4 w-1.5 h-1.5 bg-white/60 rounded-full" />
+                </div>
               </div>
             </div>
           </div>
