@@ -1,31 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
+export default function SlotReel({ photos, isSpinning, onSpinComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [offset, setOffset] = useState(0);
   const [speed, setSpeed] = useState(0);
   const animationRef = useRef(null);
   const startTimeRef = useRef(0);
   const totalSpinTimeRef = useRef(3000);
-  const lastIndexRef = useRef(0);
+  const finalIndexRef = useRef(0);
 
   useEffect(() => {
     if (isSpinning && photos.length > 0) {
       startTimeRef.current = Date.now();
       totalSpinTimeRef.current = 2500 + Math.random() * 1500; // 2.5-4 seconds
-      lastIndexRef.current = 0;
       
       const initialSpeed = 50; // Very fast initial speed
       const photoHeight = 300; // Height of one photo slot
       let accumulatedDistance = 0;
-      let localIndex = 0;
+      let localIndex = currentIndex; // Start from current position
       
       const animate = () => {
         const elapsed = Date.now() - startTimeRef.current;
         const progress = Math.min(elapsed / totalSpinTimeRef.current, 1);
         
         // Easing: very fast at start, progressively slower
-        // Using custom easing for slot machine feel
         const easeOutQuart = 1 - Math.pow(1 - progress, 4);
         
         // Speed decreases from initialSpeed to 0
@@ -43,7 +41,9 @@ export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
           const newIndex = Math.floor(accumulatedDistance / photoHeight);
           if (newIndex !== localIndex) {
             localIndex = newIndex;
-            setCurrentIndex(localIndex % photos.length);
+            const photoIndex = localIndex % photos.length;
+            setCurrentIndex(photoIndex);
+            finalIndexRef.current = photoIndex;
           }
           
           animationRef.current = requestAnimationFrame(animate);
@@ -51,6 +51,11 @@ export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
           // Animation complete - snap to final position
           setOffset(0);
           setSpeed(0);
+          
+          // Notify parent of the final selected photo
+          if (onSpinComplete && photos[finalIndexRef.current]) {
+            onSpinComplete(photos[finalIndexRef.current]);
+          }
         }
       };
       
@@ -65,17 +70,7 @@ export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
       setOffset(0);
       setSpeed(0);
     }
-  }, [isSpinning, photos.length]);
-
-  // Update display when selected photo changes (after spin stops)
-  useEffect(() => {
-    if (!isSpinning && selectedPhoto && photos.length > 0) {
-      const idx = photos.findIndex(p => p.id === selectedPhoto.id);
-      if (idx !== -1) {
-        setCurrentIndex(idx);
-      }
-    }
-  }, [selectedPhoto, isSpinning, photos]);
+  }, [isSpinning, photos, onSpinComplete]);
 
   if (photos.length === 0) return null;
 
@@ -85,7 +80,7 @@ export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
     return photos[normalizedIdx];
   };
 
-  const displayPhoto = !isSpinning && selectedPhoto ? selectedPhoto : getPhotoAtIndex(currentIndex);
+  const displayPhoto = getPhotoAtIndex(currentIndex);
   const prevPhoto = getPhotoAtIndex(currentIndex - 1);
   const nextPhoto = getPhotoAtIndex(currentIndex + 1);
 
@@ -128,7 +123,7 @@ export default function SlotReel({ photos, isSpinning, selectedPhoto }) {
 
         {/* Current photo (center) */}
         <div className={`polaroid-frame transform transition-transform duration-300 ${
-          !isSpinning && selectedPhoto ? 'scale-100' : 'scale-95'
+          !isSpinning ? 'scale-100' : 'scale-95'
         }`}>
           <div className="w-48 sm:w-56 aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
             <img
