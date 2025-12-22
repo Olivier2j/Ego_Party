@@ -209,11 +209,6 @@ export default function SlotMachine() {
           {photos.length} PHOTO{photos.length !== 1 ? 'S' : ''} DANS LA MACHINE
         </p>
       </div>
-
-      {/* Win Display Overlay */}
-      {showWin && selectedPhoto && (
-        <WinDisplay photo={selectedPhoto} onClose={() => setShowWin(false)} />
-      )}
     </div>
   );
 }
