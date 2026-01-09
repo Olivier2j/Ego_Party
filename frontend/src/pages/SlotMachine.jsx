@@ -233,14 +233,18 @@ export default function SlotMachine() {
               {/* Slot/track for the button - horizontal on mobile (wider), vertical on desktop */}
               <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 h-8 sm:w-10 sm:h-24 bg-amber-900/80 rounded-lg border-2 border-amber-950/50 shadow-inner" />
               
-              {/* Red Button - animated: horizontal swipe on mobile, vertical on desktop */}
+              {/* Red Button - animated: fast forward, slow return */}
               <div
-                className={`absolute top-1/2 -translate-y-1/2 sm:top-2 sm:translate-y-0 sm:left-1/2 sm:-translate-x-1/2 transition-transform duration-500 ${
-                  leverPulled 
-                    ? 'left-[124px] sm:left-1/2 sm:translate-y-16 scale-95' 
-                    : 'left-4 sm:left-1/2 sm:translate-y-0 scale-100'
-                }`}
+                className="absolute top-1/2 -translate-y-1/2 sm:top-2 sm:translate-y-0 sm:left-1/2 sm:-translate-x-1/2"
+                style={{
+                  left: leverPulled ? '124px' : '16px',
+                  transform: `translateY(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
+                  transition: leverPulled 
+                    ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out' // Fast to right
+                    : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out', // Slow return
+                }}
               >
+                {/* Desktop override styles */}
                 <div 
                   className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-xl border-4 transition-all duration-300 relative ${
                     canSpin 
