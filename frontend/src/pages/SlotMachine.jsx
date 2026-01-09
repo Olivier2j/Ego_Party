@@ -94,9 +94,9 @@ export default function SlotMachine() {
     playSound('lever');
 
     setTimeout(() => {
-      setLeverPulled(false);
       setIsSpinning(true);
-    }, 500);
+      // Keep leverPulled true - it will be reset when spin completes
+    }, 300);
   }, [isSpinning, photos.length, playSound]);
 
   // Called by SlotReel when animation completes
@@ -105,12 +105,15 @@ export default function SlotMachine() {
     setIsSpinning(false);
     setSelectedPhoto(photo);
     
+    // Slowly return the lever
+    setLeverPulled(false);
+    
     // Start celebration (title blinking) for 2.5 seconds
     setIsCelebrating(true);
     celebrationTimerRef.current = setTimeout(() => {
       setIsCelebrating(false);
     }, 2500);
-  }, [stopSound, playSound]);
+  }, [playSound]);
 
   // Cleanup timer on unmount
   useEffect(() => {
