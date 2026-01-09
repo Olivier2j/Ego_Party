@@ -227,22 +227,22 @@ export default function SlotMachine() {
           <div className="relative">
             {/* Fixed Frame/Mount - same color as machine (amber/gold) */}
             <div className="relative">
-              {/* Base plate - amber/gold color matching the machine */}
-              <div className="w-20 h-14 sm:w-16 sm:h-36 bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800 rounded-xl border-4 border-amber-500 shadow-lg" />
+              {/* Base plate - wider horizontal on mobile, vertical on desktop */}
+              <div className="w-44 h-14 sm:w-16 sm:h-36 bg-gradient-to-b sm:bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800 rounded-xl border-4 border-amber-500 shadow-lg" />
               
-              {/* Slot/track for the button - darker inset */}
-              <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 sm:top-4 sm:translate-y-0 w-12 h-8 sm:w-10 sm:h-24 bg-amber-900/80 rounded-lg border-2 border-amber-950/50 shadow-inner" />
+              {/* Slot/track for the button - horizontal on mobile, vertical on desktop */}
+              <div className="absolute top-1/2 -translate-y-1/2 left-4 sm:left-1/2 sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 w-32 h-8 sm:w-10 sm:h-24 bg-amber-900/80 rounded-lg border-2 border-amber-950/50 shadow-inner" />
               
-              {/* Red Button - animated */}
+              {/* Red Button - animated: horizontal swipe on mobile, vertical on desktop */}
               <div
-                className={`absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 sm:top-2 sm:translate-y-0 transition-transform duration-500 ${
+                className={`absolute top-1/2 -translate-y-1/2 sm:top-2 sm:translate-y-0 sm:left-1/2 sm:-translate-x-1/2 transition-transform duration-500 ${
                   leverPulled 
-                    ? 'sm:translate-y-16 scale-95' 
-                    : 'sm:translate-y-0 scale-100'
+                    ? 'left-[120px] sm:left-1/2 sm:translate-y-16 scale-95' 
+                    : 'left-4 sm:left-1/2 sm:translate-y-0 scale-100'
                 }`}
               >
                 <div 
-                  className={`w-14 h-14 sm:w-12 sm:h-12 rounded-full shadow-xl border-4 transition-all duration-300 relative ${
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-xl border-4 transition-all duration-300 relative ${
                     canSpin 
                       ? 'bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-red-300 hover:from-red-300 hover:via-red-400 hover:to-red-600 hover:shadow-[0_0_25px_rgba(239,68,68,0.6)]' 
                       : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 border-gray-400'
@@ -254,9 +254,14 @@ export default function SlotMachine() {
                   }}
                 >
                   {/* Shine effect on button */}
-                  <div className="absolute top-1.5 left-2 w-4 h-4 bg-white/40 rounded-full blur-sm" />
-                  <div className="absolute top-3 left-4 w-1.5 h-1.5 bg-white/60 rounded-full" />
+                  <div className="absolute top-1 left-1.5 w-3 h-3 bg-white/40 rounded-full blur-sm" />
+                  <div className="absolute top-2 left-3 w-1 h-1 bg-white/60 rounded-full" />
                 </div>
+              </div>
+              
+              {/* Arrow indicator on mobile - shows swipe direction */}
+              <div className="sm:hidden absolute top-1/2 -translate-y-1/2 right-5 text-amber-400/60 text-lg font-bold">
+                →
               </div>
             </div>
           </div>
