@@ -230,14 +230,14 @@ export default function SlotMachine() {
               {/* Base plate - wider horizontal on mobile, vertical on desktop */}
               <div className="w-44 h-14 sm:w-16 sm:h-36 bg-gradient-to-b sm:bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800 rounded-xl border-4 border-amber-500 shadow-lg" />
               
-              {/* Slot/track for the button - horizontal on mobile, vertical on desktop */}
-              <div className="absolute top-1/2 -translate-y-1/2 left-4 sm:left-1/2 sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 w-32 h-8 sm:w-10 sm:h-24 bg-amber-900/80 rounded-lg border-2 border-amber-950/50 shadow-inner" />
+              {/* Slot/track for the button - horizontal on mobile (wider), vertical on desktop */}
+              <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 h-8 sm:w-10 sm:h-24 bg-amber-900/80 rounded-lg border-2 border-amber-950/50 shadow-inner" />
               
               {/* Red Button - animated: horizontal swipe on mobile, vertical on desktop */}
               <div
                 className={`absolute top-1/2 -translate-y-1/2 sm:top-2 sm:translate-y-0 sm:left-1/2 sm:-translate-x-1/2 transition-transform duration-500 ${
                   leverPulled 
-                    ? 'left-[120px] sm:left-1/2 sm:translate-y-16 scale-95' 
+                    ? 'left-[124px] sm:left-1/2 sm:translate-y-16 scale-95' 
                     : 'left-4 sm:left-1/2 sm:translate-y-0 scale-100'
                 }`}
               >
@@ -258,20 +258,8 @@ export default function SlotMachine() {
                   <div className="absolute top-2 left-3 w-1 h-1 bg-white/60 rounded-full" />
                 </div>
               </div>
-              
-              {/* Arrow indicator on mobile - shows swipe direction */}
-              <div className="sm:hidden absolute top-1/2 -translate-y-1/2 right-5 text-amber-400/60 text-lg font-bold">
-                →
-              </div>
             </div>
           </div>
-          
-          {/* Label under lever */}
-          <p className={`font-display text-sm mt-3 text-center transition-colors ${
-            canSpin ? 'text-primary' : 'text-muted-foreground'
-          }`}>
-            {isSpinning ? 'ATTENDRE...' : 'TIRER'}
-          </p>
         </div>
       </div>
 
