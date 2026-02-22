@@ -56,6 +56,7 @@ export default function SlotMachine() {
   const playSound = useCallback((soundName) => {
     if (soundEnabled && audioRefs.current[soundName]) {
       const audio = audioRefs.current[soundName];
+      audio.volume = 0.15; // Force volume before playing
       audio.currentTime = 0;
       audio.play().catch(() => {});
     }
@@ -75,6 +76,7 @@ export default function SlotMachine() {
     const pool = clickAudioPoolRef.current;
     if (pool.length > 0) {
       const audio = pool[clickPoolIndexRef.current];
+      audio.volume = 0.15; // Force volume before playing
       audio.currentTime = 0;
       audio.play().catch(() => {});
       clickPoolIndexRef.current = (clickPoolIndexRef.current + 1) % pool.length;
