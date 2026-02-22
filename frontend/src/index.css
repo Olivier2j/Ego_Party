@@ -6,67 +6,67 @@
 
 @layer base {
     :root {
-        /* Retro Casino Color Palette - Las Vegas Style */
-        --background: 0 0% 8%;
-        --foreground: 45 100% 95%;
+        /* Dark Teal/Green Casino Theme */
+        --background: 150 33% 17%;
+        --foreground: 41 63% 94%;
         
-        /* Deep burgundy/velvet red */
-        --card: 350 50% 12%;
-        --card-foreground: 45 100% 95%;
+        /* Deep teal/green */
+        --card: 150 33% 14%;
+        --card-foreground: 41 63% 94%;
         
-        --popover: 350 50% 15%;
-        --popover-foreground: 45 100% 95%;
+        --popover: 150 33% 18%;
+        --popover-foreground: 41 63% 94%;
         
-        /* Rich Gold - Primary CTA */
-        --primary: 43 100% 50%;
-        --primary-foreground: 0 0% 5%;
+        /* Muted Gold - Primary */
+        --primary: 37 69% 69%;
+        --primary-foreground: 150 33% 10%;
         
-        /* Velvet Red - Secondary */
-        --secondary: 350 70% 35%;
-        --secondary-foreground: 45 100% 95%;
+        /* Deep Red/Maroon - Secondary (lever) */
+        --secondary: 345 55% 23%;
+        --secondary-foreground: 41 63% 94%;
         
-        /* Muted Casino Carpet */
-        --muted: 350 30% 18%;
-        --muted-foreground: 45 30% 70%;
+        /* Muted dark teal */
+        --muted: 150 30% 20%;
+        --muted-foreground: 37 50% 70%;
         
-        /* Neon Accent - Electric Pink/Magenta */
-        --accent: 330 100% 65%;
-        --accent-foreground: 0 0% 5%;
+        /* Gold Accent */
+        --accent: 35 48% 53%;
+        --accent-foreground: 150 33% 10%;
         
-        /* Neon Cyan for highlights */
-        --neon-cyan: 180 100% 50%;
-        --neon-pink: 330 100% 60%;
-        --neon-gold: 43 100% 55%;
-        --neon-red: 0 100% 50%;
+        /* Bulb colors - warm yellow/orange */
+        --neon-cyan: 41 79% 64%;
+        --neon-pink: 35 48% 53%;
+        --neon-gold: 41 79% 64%;
+        --neon-red: 347 54% 36%;
         
         /* Chrome/Metal accents */
-        --chrome: 0 0% 75%;
-        --chrome-dark: 0 0% 40%;
+        --chrome: 35 48% 53%;
+        --chrome-dark: 35 40% 35%;
         
-        --destructive: 0 84% 60%;
-        --destructive-foreground: 0 0% 98%;
+        --destructive: 347 54% 36%;
+        --destructive-foreground: 41 63% 94%;
         
-        --border: 43 50% 30%;
-        --input: 350 30% 20%;
-        --ring: 43 100% 50%;
+        --border: 35 48% 40%;
+        --input: 150 30% 20%;
+        --ring: 37 69% 69%;
         
         --radius: 0.5rem;
         
         /* Casino-specific tokens */
-        --slot-frame: linear-gradient(180deg, hsl(43 80% 60%) 0%, hsl(43 70% 40%) 50%, hsl(43 80% 55%) 100%);
-        --slot-inner: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 12%) 100%);
-        --velvet: linear-gradient(180deg, hsl(350 50% 18%) 0%, hsl(350 60% 12%) 100%);
-        --chrome-shine: linear-gradient(135deg, hsl(0 0% 85%) 0%, hsl(0 0% 50%) 50%, hsl(0 0% 70%) 100%);
+        --slot-frame: linear-gradient(180deg, hsl(35 48% 58%) 0%, hsl(35 48% 45%) 50%, hsl(35 48% 53%) 100%);
+        --slot-inner: linear-gradient(180deg, hsl(0 0% 7%) 0%, hsl(0 0% 12%) 100%);
+        --velvet: linear-gradient(180deg, hsl(150 33% 20%) 0%, hsl(150 35% 14%) 100%);
+        --chrome-shine: linear-gradient(135deg, hsl(35 48% 60%) 0%, hsl(35 48% 45%) 50%, hsl(35 48% 55%) 100%);
         
         /* Shadows */
-        --shadow-neon-gold: 0 0 20px hsl(43 100% 50% / 0.5), 0 0 40px hsl(43 100% 50% / 0.3);
-        --shadow-neon-pink: 0 0 20px hsl(330 100% 60% / 0.5), 0 0 40px hsl(330 100% 60% / 0.3);
-        --shadow-neon-cyan: 0 0 15px hsl(180 100% 50% / 0.4);
+        --shadow-neon-gold: 0 0 20px hsl(41 79% 64% / 0.5), 0 0 40px hsl(41 79% 64% / 0.3);
+        --shadow-neon-pink: 0 0 20px hsl(35 48% 53% / 0.5), 0 0 40px hsl(35 48% 53% / 0.3);
+        --shadow-neon-cyan: 0 0 15px hsl(41 79% 64% / 0.4);
         --shadow-inner-slot: inset 0 10px 30px hsl(0 0% 0% / 0.8);
         --shadow-machine: 0 30px 60px hsl(0 0% 0% / 0.7), 0 10px 20px hsl(0 0% 0% / 0.5);
         
         /* Polaroid specific */
-        --polaroid-bg: 45 30% 95%;
+        --polaroid-bg: 41 63% 94%;
         --polaroid-shadow: 0 4px 15px hsl(0 0% 0% / 0.4);
     }
 }
