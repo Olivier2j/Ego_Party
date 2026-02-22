@@ -277,20 +277,20 @@
 /* Chrome/Metal Effect */
 .chrome-effect {
     background: linear-gradient(180deg, 
-        hsl(0 0% 90%) 0%, 
-        hsl(0 0% 60%) 20%, 
-        hsl(0 0% 80%) 40%, 
-        hsl(0 0% 50%) 60%, 
-        hsl(0 0% 70%) 80%, 
-        hsl(0 0% 85%) 100%);
+        hsl(35 48% 58%) 0%, 
+        hsl(35 48% 45%) 20%, 
+        hsl(35 48% 55%) 40%, 
+        hsl(35 48% 40%) 60%, 
+        hsl(35 48% 50%) 80%, 
+        hsl(35 48% 55%) 100%);
 }
 
-/* Velvet Texture */
+/* Velvet Texture - Dark Teal/Green */
 .velvet-texture {
     background: 
-        radial-gradient(ellipse at 20% 30%, hsl(350 60% 20% / 0.5) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 70%, hsl(350 50% 25% / 0.5) 0%, transparent 50%),
-        linear-gradient(180deg, hsl(350 50% 15%) 0%, hsl(350 60% 10%) 100%);
+        radial-gradient(ellipse at 20% 30%, hsl(150 35% 22% / 0.5) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, hsl(150 30% 20% / 0.5) 0%, transparent 50%),
+        linear-gradient(180deg, hsl(150 33% 17%) 0%, hsl(150 35% 12%) 100%);
 }
 
 /* Slot Window Glass Effect */
