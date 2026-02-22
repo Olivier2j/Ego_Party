@@ -85,27 +85,26 @@
     }
 }
 
-/* Neon Text Effect */
+/* Neon Text Effect - Muted Gold */
 .neon-text-gold {
     text-shadow: 
-        0 0 2px hsl(43 100% 50%),
-        0 0 4px hsl(43 100% 50%),
-        0 0 8px hsl(43 80% 50%);
+        0 0 2px hsl(37 69% 69%),
+        0 0 4px hsl(37 60% 60%),
+        0 0 8px hsl(35 48% 53%);
 }
 
 .neon-text-pink {
     text-shadow: 
-        0 0 7px hsl(330 100% 60%),
-        0 0 10px hsl(330 100% 60%),
-        0 0 21px hsl(330 100% 60%),
-        0 0 42px hsl(330 80% 50%);
+        0 0 5px hsl(35 48% 53%),
+        0 0 10px hsl(35 48% 53%),
+        0 0 15px hsl(35 40% 45%);
 }
 
 .neon-text-cyan {
     text-shadow: 
-        0 0 7px hsl(180 100% 50%),
-        0 0 10px hsl(180 100% 50%),
-        0 0 21px hsl(180 100% 50%);
+        0 0 5px hsl(41 79% 64%),
+        0 0 10px hsl(41 79% 64%),
+        0 0 15px hsl(41 70% 55%);
 }
 
 /* Neon Border Animation */
