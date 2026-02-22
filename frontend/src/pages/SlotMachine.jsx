@@ -40,7 +40,7 @@ export default function SlotMachine() {
     Object.entries(SOUNDS).forEach(([key, url]) => {
       const audio = new Audio(url);
       audio.preload = 'auto';
-      audio.volume = 0.7; // Reduced by 30%
+      audio.volume = 0.15; // 15% of max
       audioRefs.current[key] = audio;
     });
     
@@ -48,7 +48,7 @@ export default function SlotMachine() {
     for (let i = 0; i < 8; i++) {
       const clickAudio = new Audio(SOUNDS.click);
       clickAudio.preload = 'auto';
-      clickAudio.volume = 0.28; // 0.4 * 0.7 = reduced by 30%
+      clickAudio.volume = 0.15; // 15% of max
       clickAudioPoolRef.current.push(clickAudio);
     }
   }, []);
