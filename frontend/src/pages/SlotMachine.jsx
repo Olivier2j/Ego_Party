@@ -157,8 +157,8 @@ export default function SlotMachine() {
       {/* Slot Machine Body with Lever */}
       <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
 
-        {/* Machine Frame with Bulbs */}
-        <div className="relative rounded-3xl p-6 sm:p-8 shadow-machine border-4 order-1" style={{ background: 'linear-gradient(180deg, hsl(35 48% 58%) 0%, hsl(35 48% 48%) 50%, hsl(35 48% 53%) 100%)', borderColor: 'hsl(35 48% 45%)' }}>
+        {/* Machine Frame with Bulbs - GREEN body with GOLD border */}
+        <div className="relative rounded-3xl p-6 sm:p-8 shadow-machine border-4 order-1" style={{ background: 'linear-gradient(180deg, hsl(150 30% 25%) 0%, hsl(150 35% 18%) 50%, hsl(150 30% 22%) 100%)', borderColor: 'hsl(35 48% 45%)' }}>
           
           {/* Casino Title - Centered on machine */}
           <div className="text-center mb-4 relative z-10">
