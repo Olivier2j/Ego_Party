@@ -231,13 +231,13 @@ export default function SlotMachine() {
         >
           {/* Lever with frame and red button */}
           <div className="relative">
-            {/* Fixed Frame/Mount - same color as machine (amber/gold) */}
+            {/* Fixed Frame/Mount - matching machine bronze/gold color */}
             <div className="relative">
               {/* Base plate - wider horizontal on mobile, vertical on desktop */}
-              <div className="w-44 h-14 sm:w-16 sm:h-36 bg-gradient-to-b sm:bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800 rounded-xl border-4 border-amber-500 shadow-lg" />
+              <div className="w-44 h-14 sm:w-16 sm:h-36 rounded-xl border-4 shadow-lg" style={{ background: 'linear-gradient(180deg, hsl(35 48% 55%) 0%, hsl(35 48% 45%) 50%, hsl(35 48% 40%) 100%)', borderColor: 'hsl(35 48% 50%)' }} />
               
               {/* Slot/track for the button - horizontal on mobile (wider), vertical on desktop */}
-              <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 h-8 sm:w-10 sm:h-24 bg-amber-900/80 rounded-lg border-2 border-amber-950/50 shadow-inner" />
+              <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 h-8 sm:w-10 sm:h-24 rounded-lg border-2 shadow-inner" style={{ background: 'hsl(35 40% 25%)', borderColor: 'hsl(35 35% 20%)' }} />
               
               {/* Red Button - animated: fast forward, slow return */}
               <div
