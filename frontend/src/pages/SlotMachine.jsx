@@ -158,14 +158,14 @@ export default function SlotMachine() {
       <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
 
         {/* Machine Frame with Bulbs */}
-        <div className="relative bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900 rounded-3xl p-6 sm:p-8 shadow-machine border-4 border-amber-600 order-1">
+        <div className="relative rounded-3xl p-6 sm:p-8 shadow-machine border-4 order-1" style={{ background: 'linear-gradient(180deg, hsl(35 48% 58%) 0%, hsl(35 48% 48%) 50%, hsl(35 48% 53%) 100%)', borderColor: 'hsl(35 48% 45%)' }}>
           
           {/* Casino Title - Centered on machine */}
           <div className="text-center mb-4 relative z-10">
-            <h1 className={`font-display text-4xl sm:text-5xl lg:text-6xl text-primary tracking-wider ${isCelebrating ? 'animate-title-blink' : 'neon-text-gold'}`}>
+            <h1 className={`font-display text-4xl sm:text-5xl lg:text-6xl tracking-wider ${isCelebrating ? 'animate-title-blink' : 'neon-text-gold'}`} style={{ color: 'hsl(37 69% 69%)' }}>
               EGO PARTY
             </h1>
-            <p className="font-display text-lg sm:text-xl text-fuchsia-400 mt-1 tracking-widest" style={{ textShadow: '0 0 8px hsl(330 100% 60%), 0 0 15px hsl(330 100% 55%)' }}>
+            <p className="font-display text-lg sm:text-xl mt-1 tracking-widest" style={{ color: 'hsl(35 48% 53%)', textShadow: '0 0 5px hsl(35 48% 53%), 0 0 10px hsl(35 40% 45%)' }}>
               SLOT MACHINE
             </p>
           </div>
