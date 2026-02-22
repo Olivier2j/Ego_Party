@@ -207,8 +207,8 @@ export default function SlotMachine() {
             </div>
           </div>
 
-          {/* Chrome Bottom Plate */}
-          <div className="chrome-effect h-4 rounded-b-xl mt-4 border-t-2 border-gray-400" />
+          {/* Gold Bottom Plate */}
+          <div className="h-4 rounded-b-xl mt-4 border-t-2" style={{ background: 'linear-gradient(180deg, hsl(35 48% 45%) 0%, hsl(35 48% 55%) 100%)', borderColor: 'hsl(35 40% 55%)' }} />
 
           {/* Bottom Bulbs */}
           <CasinoBulbs position="bottom" count={9} isSpinning={isSpinning} />
