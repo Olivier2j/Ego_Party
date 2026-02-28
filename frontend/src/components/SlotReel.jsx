@@ -64,12 +64,13 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
           const newIndex = Math.floor(accumulatedDistance / photoHeight);
           if (newIndex !== localIndex) {
             localIndex = newIndex;
+            clickCount++;
             const photoIndex = localIndex % photos.length;
             setCurrentIndex(photoIndex);
             finalIndexRef.current = photoIndex;
             
-            // Play click sound on each photo change
-            if (onPhotoChange) {
+            // Play click sound on each photo change (max 15 clicks)
+            if (onPhotoChange && clickCount <= targetClicks) {
               onPhotoChange();
             }
           }
