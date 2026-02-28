@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { ArrowLeft, Upload, Trash2, Image, X } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, Image, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Constants
+const MAX_PHOTOS = 250;
+const MAX_IMAGE_SIZE = 400; // Max width/height in pixels
+const JPEG_QUALITY = 0.6; // Compression quality (0.6 = 60%)
+const STORAGE_KEY = 'slotPhotos';
 
 // Generate stable rotations for photos
 function getRotation(id) {
@@ -11,55 +17,183 @@ function getRotation(id) {
   return ((seed * 9301 + 49297) % 233280) / 233280 * 6 - 3;
 }
 
+// Compress and resize image
+async function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        
+        // Calculate new dimensions maintaining aspect ratio
+        if (width > height) {
+          if (width > MAX_IMAGE_SIZE) {
+            height = Math.round((height * MAX_IMAGE_SIZE) / width);
+            width = MAX_IMAGE_SIZE;
+          }
+        } else {
+          if (height > MAX_IMAGE_SIZE) {
+            width = Math.round((width * MAX_IMAGE_SIZE) / height);
+            height = MAX_IMAGE_SIZE;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to compressed JPEG
+        const compressedBase64 = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+        resolve(compressedBase64);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Calculate storage usage
+function getStorageUsage() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) return { used: 0, percentage: 0 };
+    const bytes = new Blob([data]).size;
+    const maxBytes = 5 * 1024 * 1024; // 5MB estimate
+    return {
+      used: bytes,
+      percentage: Math.min(100, Math.round((bytes / maxBytes) * 100))
+    };
+  } catch {
+    return { used: 0, percentage: 0 };
+  }
+}
+
+// Format bytes to human readable
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' o';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+}
+
 export default function PhotoManager() {
   const [photos, setPhotos] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [storageUsage, setStorageUsage] = useState({ used: 0, percentage: 0 });
 
   // Load photos from localStorage
   useEffect(() => {
-    const savedPhotos = localStorage.getItem('slotPhotos');
+    const savedPhotos = localStorage.getItem(STORAGE_KEY);
     if (savedPhotos) {
-      setPhotos(JSON.parse(savedPhotos));
+      try {
+        setPhotos(JSON.parse(savedPhotos));
+      } catch {
+        setPhotos([]);
+      }
     }
+    setStorageUsage(getStorageUsage());
   }, []);
 
-  // Save photos to localStorage
+  // Save photos to localStorage with error handling
   const savePhotos = useCallback((newPhotos) => {
-    localStorage.setItem('slotPhotos', JSON.stringify(newPhotos));
-    setPhotos(newPhotos);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newPhotos));
+      setPhotos(newPhotos);
+      setStorageUsage(getStorageUsage());
+      return true;
+    } catch (error) {
+      if (error.name === 'QuotaExceededError') {
+        toast.error('Stockage plein ! Supprimez des photos pour en ajouter.');
+      } else {
+        toast.error('Erreur lors de la sauvegarde');
+      }
+      return false;
+    }
   }, []);
 
   const handleFileChange = async (files) => {
     if (!files || files.length === 0) return;
 
-    setIsUploading(true);
-    const newPhotos = [...photos];
+    const fileArray = Array.from(files);
+    
+    // Check photo limit
+    const remainingSlots = MAX_PHOTOS - photos.length;
+    if (remainingSlots <= 0) {
+      toast.error(`Limite atteinte ! Maximum ${MAX_PHOTOS} photos.`);
+      return;
+    }
+    
+    const filesToProcess = fileArray.slice(0, remainingSlots);
+    if (filesToProcess.length < fileArray.length) {
+      toast.warning(`Seules ${filesToProcess.length} photos seront ajoutées (limite: ${MAX_PHOTOS})`);
+    }
 
-    for (const file of files) {
+    setIsUploading(true);
+    setUploadProgress({ current: 0, total: filesToProcess.length });
+    
+    const newPhotos = [...photos];
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < filesToProcess.length; i++) {
+      const file = filesToProcess[i];
+      setUploadProgress({ current: i + 1, total: filesToProcess.length });
+      
       if (!file.type.startsWith('image/')) {
         toast.error(`${file.name} n'est pas une image valide`);
+        errorCount++;
         continue;
       }
 
-      // Convert to base64
-      const base64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-      });
-
-      newPhotos.push({
-        id: Date.now() + Math.random(),
-        src: base64,
-        name: file.name,
-        addedAt: new Date().toISOString(),
-      });
+      try {
+        // Compress the image
+        const compressedBase64 = await compressImage(file);
+        
+        newPhotos.push({
+          id: Date.now() + Math.random(),
+          src: compressedBase64,
+          name: file.name,
+          addedAt: new Date().toISOString(),
+        });
+        
+        successCount++;
+        
+        // Save incrementally every 10 photos to avoid losing progress
+        if (successCount % 10 === 0) {
+          const saved = savePhotos(newPhotos);
+          if (!saved) {
+            // Storage full, stop processing
+            toast.error(`Stockage plein après ${successCount} photos`);
+            break;
+          }
+        }
+      } catch (error) {
+        console.error('Error processing image:', file.name, error);
+        errorCount++;
+      }
     }
 
-    savePhotos(newPhotos);
+    // Final save
+    if (successCount > 0) {
+      const saved = savePhotos(newPhotos);
+      if (saved) {
+        toast.success(`${successCount} photo(s) ajoutée(s)`);
+      }
+    }
+    
+    if (errorCount > 0) {
+      toast.error(`${errorCount} photo(s) n'ont pas pu être traitées`);
+    }
+
     setIsUploading(false);
-    toast.success(`${files.length} photo(s) ajoutée(s)`);
+    setUploadProgress({ current: 0, total: 0 });
   };
 
   const handleDrop = useCallback((e) => {
@@ -92,6 +226,12 @@ export default function PhotoManager() {
     }
   };
 
+  const storageBarColor = storageUsage.percentage > 90 
+    ? 'bg-red-500' 
+    : storageUsage.percentage > 70 
+      ? 'bg-yellow-500' 
+      : 'bg-green-500';
+
   return (
     <div className="min-h-screen velvet-texture p-4 sm:p-8">
       {/* Background decorations */}
@@ -115,13 +255,37 @@ export default function PhotoManager() {
           <div className="w-24" /> {/* Spacer */}
         </div>
 
+        {/* Storage Usage Bar */}
+        <Card className="mb-4 p-4 bg-card/50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-muted-foreground">
+              Stockage utilisé: {formatBytes(storageUsage.used)}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {photos.length} / {MAX_PHOTOS} photos
+            </span>
+          </div>
+          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${storageBarColor} transition-all duration-300`}
+              style={{ width: `${storageUsage.percentage}%` }}
+            />
+          </div>
+          {storageUsage.percentage > 90 && (
+            <div className="flex items-center gap-2 mt-2 text-yellow-500 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              <span>Stockage presque plein</span>
+            </div>
+          )}
+        </Card>
+
         {/* Upload Area */}
         <Card
           className={`mb-8 border-2 border-dashed transition-all duration-300 ${
             isDragging
               ? 'border-primary bg-primary/10 scale-[1.02]'
               : 'border-border bg-card/50 hover:border-primary/50'
-          }`}
+          } ${isUploading ? 'pointer-events-none opacity-70' : ''}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -133,20 +297,49 @@ export default function PhotoManager() {
               accept="image/*"
               className="hidden"
               onChange={(e) => handleFileChange(e.target.files)}
-              disabled={isUploading}
+              disabled={isUploading || photos.length >= MAX_PHOTOS}
             />
             <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-4">
               <Upload className="h-10 w-10 text-primary" />
             </div>
-            <p className="font-display text-2xl text-foreground mb-2">
-              {isDragging ? 'DÉPOSEZ ICI' : 'AJOUTER DES PHOTOS'}
-            </p>
-            <p className="text-muted-foreground text-center">
-              Glissez-déposez vos images ou cliquez pour sélectionner
-            </p>
-            <p className="text-muted-foreground/60 text-sm mt-2">
-              Formats acceptés: JPG, PNG, GIF, WebP
-            </p>
+            
+            {isUploading ? (
+              <>
+                <p className="font-display text-2xl text-foreground mb-2">
+                  TRAITEMENT EN COURS...
+                </p>
+                <p className="text-muted-foreground text-center">
+                  {uploadProgress.current} / {uploadProgress.total} photos
+                </p>
+                <div className="w-48 h-2 bg-muted rounded-full mt-4 overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                  />
+                </div>
+              </>
+            ) : photos.length >= MAX_PHOTOS ? (
+              <>
+                <p className="font-display text-2xl text-foreground mb-2">
+                  LIMITE ATTEINTE
+                </p>
+                <p className="text-muted-foreground text-center">
+                  Supprimez des photos pour en ajouter
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-display text-2xl text-foreground mb-2">
+                  {isDragging ? 'DÉPOSEZ ICI' : 'AJOUTER DES PHOTOS'}
+                </p>
+                <p className="text-muted-foreground text-center">
+                  Glissez-déposez vos images ou cliquez pour sélectionner
+                </p>
+                <p className="text-muted-foreground/60 text-sm mt-2">
+                  Formats acceptés: JPG, PNG, GIF, WebP • Auto-compressées
+                </p>
+              </>
+            )}
           </label>
         </Card>
 
@@ -185,6 +378,7 @@ export default function PhotoManager() {
                     src={photo.src}
                     alt={photo.name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
                 {/* Delete Button */}
@@ -214,9 +408,9 @@ export default function PhotoManager() {
         {/* Info */}
         <div className="mt-8 text-center">
           <p className="text-muted-foreground text-sm">
-            Les photos sont stockées localement dans votre navigateur.
+            Les photos sont compressées et stockées localement dans votre navigateur.
             <br />
-            Capacité maximale recommandée: ~250 photos
+            Capacité maximale: {MAX_PHOTOS} photos
           </p>
         </div>
       </div>
