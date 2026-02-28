@@ -138,62 +138,58 @@ export default function PhotoManager() {
     setIsUploading(true);
     setUploadProgress({ current: 0, total: filesToProcess.length });
     
-    const newPhotos = [...photos];
+    let newPhotos = [...photos];
     let successCount = 0;
     let errorCount = 0;
 
-    for (let i = 0; i < filesToProcess.length; i++) {
-      const file = filesToProcess[i];
-      setUploadProgress({ current: i + 1, total: filesToProcess.length });
-      
-      if (!file.type.startsWith('image/')) {
-        toast.error(`${file.name} n'est pas une image valide`);
-        errorCount++;
-        continue;
-      }
-
-      try {
-        // Compress the image
-        const compressedBase64 = await compressImage(file);
+    try {
+      for (let i = 0; i < filesToProcess.length; i++) {
+        const file = filesToProcess[i];
+        setUploadProgress({ current: i + 1, total: filesToProcess.length });
         
-        newPhotos.push({
-          id: Date.now() + Math.random(),
-          src: compressedBase64,
-          name: file.name,
-          addedAt: new Date().toISOString(),
-        });
-        
-        successCount++;
-        
-        // Save incrementally every 10 photos to avoid losing progress
-        if (successCount % 10 === 0) {
-          const saved = savePhotos(newPhotos);
-          if (!saved) {
-            // Storage full, stop processing
-            toast.error(`Stockage plein après ${successCount} photos`);
-            break;
-          }
+        if (!file.type.startsWith('image/')) {
+          toast.error(`${file.name} n'est pas une image valide`);
+          errorCount++;
+          continue;
         }
-      } catch (error) {
-        console.error('Error processing image:', file.name, error);
-        errorCount++;
-      }
-    }
 
-    // Final save
-    if (successCount > 0) {
-      const saved = savePhotos(newPhotos);
-      if (saved) {
-        toast.success(`${successCount} photo(s) ajoutée(s)`);
+        try {
+          // Compress the image
+          const compressedBase64 = await compressImage(file);
+          
+          newPhotos.push({
+            id: Date.now() + Math.random(),
+            src: compressedBase64,
+            name: file.name,
+            addedAt: new Date().toISOString(),
+          });
+          
+          successCount++;
+        } catch (error) {
+          console.error('Error processing image:', file.name, error);
+          errorCount++;
+        }
       }
-    }
-    
-    if (errorCount > 0) {
-      toast.error(`${errorCount} photo(s) n'ont pas pu être traitées`);
-    }
 
-    setIsUploading(false);
-    setUploadProgress({ current: 0, total: 0 });
+      // Final save
+      if (successCount > 0) {
+        const saved = savePhotos(newPhotos);
+        if (saved) {
+          toast.success(`${successCount} photo(s) ajoutée(s)`);
+        }
+      }
+      
+      if (errorCount > 0) {
+        toast.error(`${errorCount} photo(s) n'ont pas pu être traitées`);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Erreur lors du chargement');
+    } finally {
+      // Always reset upload state
+      setIsUploading(false);
+      setUploadProgress({ current: 0, total: 0 });
+    }
   };
 
   const handleDrop = useCallback((e) => {
