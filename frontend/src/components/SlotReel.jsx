@@ -138,18 +138,18 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             opacity: isSpinning ? 0.5 + normalizedOffset * 0.3 : 0,
           }}
         >
-          <div className="transform scale-[0.75] border-[3px] border-black rounded-sm shadow-lg" style={{ width: '240px', height: '240px' }}>
+          <div className="transform scale-[0.75] border-[3px] border-black rounded-sm shadow-lg overflow-hidden" style={{ width: '240px', height: '240px' }}>
             <img
               src={prevPhoto?.src}
               alt=""
-              className="w-full h-full object-cover"
+              className="w-[102%] h-[102%] object-cover -ml-[1%] -mt-[1%]"
             />
           </div>
         </div>
 
         {/* Current photo (center) - Square with black border */}
         <div 
-          className={`border-[3px] border-black rounded-sm shadow-xl transform transition-transform duration-300 ${
+          className={`border-[3px] border-black rounded-sm shadow-xl overflow-hidden transform transition-transform duration-300 ${
             !isSpinning ? 'scale-100' : 'scale-95'
           }`} 
           style={{ width: '250px', height: '250px' }}
@@ -157,7 +157,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
           <img
             src={displayPhoto?.src}
             alt=""
-            className="w-full h-full object-cover"
+            className="w-[102%] h-[102%] object-cover -ml-[1%] -mt-[1%]"
           />
         </div>
 
@@ -169,11 +169,11 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             opacity: isSpinning ? 0.5 - normalizedOffset * 0.3 : 0,
           }}
         >
-          <div className="transform scale-[0.75] border-[3px] border-black rounded-sm shadow-lg" style={{ width: '240px', height: '240px' }}>
+          <div className="transform scale-[0.75] border-[3px] border-black rounded-sm shadow-lg overflow-hidden" style={{ width: '240px', height: '240px' }}>
             <img
               src={nextPhoto?.src}
               alt=""
-              className="w-full h-full object-cover"
+              className="w-[102%] h-[102%] object-cover -ml-[1%] -mt-[1%]"
             />
           </div>
         </div>
