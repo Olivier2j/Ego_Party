@@ -20,49 +20,53 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
       const randomFinalIndex = Math.floor(Math.random() * photos.length);
       finalIndexRef.current = randomFinalIndex;
       
-      // Calculate total distance: ~15 clicks + land on random photo
-      const baseClicks = 14;
-      const totalDistance = (baseClicks * photos.length + randomFinalIndex) * photoHeight;
+      // Scroll through exactly ~15 photos total, ending on randomFinalIndex
+      const totalClicks = 15;
+      const totalDistance = totalClicks * photoHeight;
       
-      // Starting position
-      let lastIndex = -1;
+      // Calculate starting index to land on randomFinalIndex after totalClicks
+      const startIndex = ((randomFinalIndex - totalClicks) % photos.length + photos.length) % photos.length;
+      
+      let lastIndex = startIndex;
+      setCurrentIndex(startIndex);
       
       const animate = () => {
         const elapsed = Date.now() - startTimeRef.current;
         const progress = Math.min(elapsed / totalSpinTimeRef.current, 1);
         
-        // Custom easing: fast start, slow end (ease-out curve)
+        // Custom easing: fast start, slow end
         let easedProgress;
-        if (progress < 0.2) {
-          // First 20%: accelerate quickly
-          easedProgress = progress * 1.5;
-        } else if (progress < 0.6) {
-          // Middle: steady fast speed
-          const midProgress = (progress - 0.2) / 0.4;
-          easedProgress = 0.3 + midProgress * 0.35;
+        if (progress < 0.3) {
+          // First 30%: fast
+          easedProgress = progress * 0.6;
+        } else if (progress < 0.7) {
+          // Middle 40%: gradual slowdown
+          const midProgress = (progress - 0.3) / 0.4;
+          easedProgress = 0.18 + midProgress * 0.42;
         } else {
-          // Last 40%: strong deceleration to stop smoothly
-          const endProgress = (progress - 0.6) / 0.4;
+          // Last 30%: strong deceleration
+          const endProgress = (progress - 0.7) / 0.3;
           const easeOutQuart = 1 - Math.pow(1 - endProgress, 4);
-          easedProgress = 0.65 + easeOutQuart * 0.35;
+          easedProgress = 0.6 + easeOutQuart * 0.4;
         }
         
         // Calculate current position based on eased progress
         const currentDistance = totalDistance * easedProgress;
         const currentOffset = currentDistance % photoHeight;
-        const currentIndex = Math.floor(currentDistance / photoHeight) % photos.length;
+        const clicksCompleted = Math.floor(currentDistance / photoHeight);
+        const currentPhotoIndex = (startIndex + clicksCompleted) % photos.length;
         
         // Update speed for blur effect
-        const speed = progress < 1 ? (1 - easedProgress) * 100 : 0;
+        const speed = progress < 1 ? (1 - easedProgress) * 80 : 0;
         setSpeed(speed);
         setOffset(currentOffset);
         
         // Play click sound when photo changes
-        if (currentIndex !== lastIndex) {
-          lastIndex = currentIndex;
-          setCurrentIndex(currentIndex);
+        if (currentPhotoIndex !== lastIndex) {
+          lastIndex = currentPhotoIndex;
+          setCurrentIndex(currentPhotoIndex);
           
-          if (onPhotoChange && progress < 0.98) {
+          if (onPhotoChange) {
             onPhotoChange();
           }
         }
@@ -70,7 +74,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         if (progress < 1) {
           animationRef.current = requestAnimationFrame(animate);
         } else {
-          // Animation complete - ensure we're on the final photo
+          // Animation complete - ensure clean final state
           setOffset(0);
           setSpeed(0);
           setCurrentIndex(randomFinalIndex);
