@@ -69,8 +69,8 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             setCurrentIndex(photoIndex);
             finalIndexRef.current = photoIndex;
             
-            // Play click sound on each photo change (max 15 clicks)
-            if (onPhotoChange && clickCount <= targetClicks) {
+            // Play click sound on EVERY photo change
+            if (onPhotoChange) {
               onPhotoChange();
             }
           }
