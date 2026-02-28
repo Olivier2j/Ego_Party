@@ -286,13 +286,21 @@ export default function PhotoManager() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
         >
-          <label className="flex flex-col items-center justify-center p-12 cursor-pointer">
+          <label 
+            htmlFor="photo-upload-input"
+            className="flex flex-col items-center justify-center p-12 cursor-pointer"
+          >
             <input
+              id="photo-upload-input"
               type="file"
               multiple
               accept="image/*"
               className="hidden"
-              onChange={(e) => handleFileChange(e.target.files)}
+              onChange={(e) => {
+                handleFileChange(e.target.files);
+                // Reset input value to allow selecting same files again
+                e.target.value = '';
+              }}
               disabled={isUploading || photos.length >= MAX_PHOTOS}
             />
             <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-4">
