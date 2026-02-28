@@ -248,20 +248,20 @@ export default function SlotMachine() {
                         : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out', // Slow return
                     }}
                   >
-                    {/* Desktop override styles - DARK RED/MAROON button */}
+                    {/* Desktop override styles - DARK RED/MAROON button #A51C30 */}
                     <div 
                       className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-xl border-4 transition-all duration-300 relative ${
                         canSpin 
-                          ? 'border-red-900 hover:shadow-[0_0_25px_rgba(139,0,0,0.6)]' 
+                          ? 'hover:shadow-[0_0_25px_rgba(165,28,48,0.6)]' 
                           : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 border-gray-400'
                       }`}
                       style={{
                         background: canSpin 
-                          ? 'linear-gradient(135deg, hsl(0 50% 35%) 0%, hsl(0 60% 25%) 50%, hsl(0 50% 20%) 100%)'
+                          ? 'linear-gradient(135deg, #c42a3f 0%, #A51C30 50%, #8a1728 100%)'
                           : undefined,
-                        borderColor: canSpin ? 'hsl(0 40% 40%)' : undefined,
+                        borderColor: canSpin ? '#7a1525' : undefined,
                         boxShadow: canSpin 
-                          ? '0 6px 15px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.3), 0 0 12px rgba(139,0,0,0.3)' 
+                          ? '0 6px 15px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.3), 0 0 12px rgba(165,28,48,0.4)' 
                           : '0 6px 15px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.3)'
                       }}
                     >
