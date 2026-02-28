@@ -12,28 +12,34 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
   useEffect(() => {
     if (isSpinning && photos.length > 0) {
       startTimeRef.current = Date.now();
-      totalSpinTimeRef.current = 2000 + Math.random() * 500; // 2-2.5 seconds for 15 clicks
+      totalSpinTimeRef.current = 2000 + Math.random() * 500; // 2-2.5 seconds for ~15 clicks
       
       const initialSpeed = 80; // Adjusted speed for 15 clicks
       const photoHeight = 300; // Height of one photo slot
       
-      // Target exactly 15 photo changes (clicks)
-      // Random final photo selection
-      const targetClicks = 15;
+      // RANDOM: Select the final photo index randomly FIRST
       const randomFinalIndex = Math.floor(Math.random() * photos.length);
-      let accumulatedDistance = randomFinalIndex * photoHeight;
+      finalIndexRef.current = randomFinalIndex;
       
-      let localIndex = randomFinalIndex;
+      // Calculate how many photos to scroll through (around 15 clicks)
+      // We need to end on randomFinalIndex
+      const minClicks = 12;
+      const maxExtraClicks = 6;
+      const totalClicks = minClicks + Math.floor(Math.random() * maxExtraClicks);
+      
+      // Start from a position that will land on randomFinalIndex after totalClicks
+      const startIndex = ((randomFinalIndex - totalClicks) % photos.length + photos.length) % photos.length;
+      let accumulatedDistance = startIndex * photoHeight;
+      
+      let localIndex = startIndex;
       let clickCount = 0;
       setCurrentIndex(localIndex);
-      finalIndexRef.current = localIndex;
       
       const animate = () => {
         const elapsed = Date.now() - startTimeRef.current;
         const progress = Math.min(elapsed / totalSpinTimeRef.current, 1);
         
         // Custom easing: very fast at start, then progressively slower with a nice deceleration curve
-        // Using a combination of easing functions for slot machine feel
         let easedProgress;
         if (progress < 0.3) {
           // First 30%: stay fast (slight ease)
@@ -67,7 +73,6 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             clickCount++;
             const photoIndex = localIndex % photos.length;
             setCurrentIndex(photoIndex);
-            finalIndexRef.current = photoIndex;
             
             // Play click sound on EVERY photo change
             if (onPhotoChange) {
@@ -77,9 +82,10 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
           
           animationRef.current = requestAnimationFrame(animate);
         } else {
-          // Animation complete - snap to final position
+          // Animation complete - snap to the pre-determined random final photo
           setOffset(0);
           setSpeed(0);
+          setCurrentIndex(finalIndexRef.current);
           
           // Notify parent of the final selected photo
           if (onSpinComplete && photos[finalIndexRef.current]) {
