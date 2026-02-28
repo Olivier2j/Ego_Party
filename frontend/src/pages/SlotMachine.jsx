@@ -56,7 +56,8 @@ export default function SlotMachine() {
   const playSound = useCallback((soundName) => {
     if (soundEnabled && audioRefs.current[soundName]) {
       const audio = audioRefs.current[soundName];
-      audio.volume = 0.15; // Force volume before playing
+      // Stop sound at 10% volume (30% less than 15%)
+      audio.volume = soundName === 'stop' ? 0.10 : 0.15;
       audio.currentTime = 0;
       audio.play().catch(() => {});
     }
