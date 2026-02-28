@@ -7,6 +7,9 @@ import { toast } from 'sonner';
 
 // Constants
 const MAX_PHOTOS = 250;
+const MAX_IMAGE_SIZE = 400; // Max width/height in pixels
+const JPEG_QUALITY = 0.6; // Compression quality (0.6 = 60%)
+const STORAGE_KEY = 'slotPhotos';
 
 // Compress and resize image
 async function compressImage(file) {
