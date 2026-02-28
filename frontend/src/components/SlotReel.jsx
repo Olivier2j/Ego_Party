@@ -35,7 +35,6 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         const progress = Math.min(elapsed / totalSpinTimeRef.current, 1);
         
         // Ease-out: FAST at start, SLOW at end (decelerating)
-        // Using ease-out-quart curve
         const easedProgress = 1 - Math.pow(1 - progress, 3);
         
         // Calculate current position based on eased progress
@@ -47,7 +46,6 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         // Update speed for blur effect (higher at start, lower at end)
         const speed = progress < 1 ? Math.pow(1 - progress, 2) * 80 : 0;
         setSpeed(speed);
-        setOffset(currentOffset);
         
         // Play click sound when photo changes
         if (currentPhotoIndex !== lastIndex) {
@@ -60,16 +58,18 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         }
         
         if (progress < 1) {
+          // During animation: show offset for smooth scrolling
+          setOffset(currentOffset);
           animationRef.current = requestAnimationFrame(animate);
         } else {
-          // Animation complete - ensure clean final state
+          // Animation complete - smooth final state (no jump)
           setOffset(0);
           setSpeed(0);
-          setCurrentIndex(randomFinalIndex);
+          // Don't force setCurrentIndex - it's already on the correct photo
           
           // Notify parent of the final selected photo
-          if (onSpinComplete && photos[randomFinalIndex]) {
-            onSpinComplete(photos[randomFinalIndex]);
+          if (onSpinComplete && photos[currentPhotoIndex]) {
+            onSpinComplete(photos[currentPhotoIndex]);
           }
         }
       };
