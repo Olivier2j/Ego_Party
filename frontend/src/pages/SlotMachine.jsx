@@ -154,11 +154,11 @@ export default function SlotMachine() {
         </Link>
       </div>
 
-      {/* Slot Machine Body with Lever */}
-      <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+      {/* Slot Machine Body with Lever INSIDE the frame */}
+      <div className="relative">
 
-        {/* Machine Frame with Bulbs - GREEN body with GOLD border */}
-        <div className="relative rounded-3xl p-6 sm:p-8 shadow-machine border-4 order-1" style={{ background: 'linear-gradient(180deg, hsl(150 30% 25%) 0%, hsl(150 35% 18%) 50%, hsl(150 30% 22%) 100%)', borderColor: 'hsl(35 48% 45%)' }}>
+        {/* Machine Frame with Bulbs - GREEN body with GOLD border - includes lever */}
+        <div className="relative rounded-3xl p-6 sm:p-8 shadow-machine border-4" style={{ background: 'linear-gradient(180deg, hsl(150 30% 25%) 0%, hsl(150 35% 18%) 50%, hsl(150 30% 22%) 100%)', borderColor: 'hsl(35 48% 45%)' }}>
           
           {/* Casino Title - Centered on machine */}
           <div className="text-center mb-4 relative z-10">
@@ -171,109 +171,116 @@ export default function SlotMachine() {
           </div>
 
           {/* Top Bulbs */}
-          <CasinoBulbs position="top" count={9} isSpinning={isSpinning} />
+          <CasinoBulbs position="top" count={11} isSpinning={isSpinning} />
           
-          {/* Gold Top Plate */}
-          <div className="h-6 rounded-t-xl mb-4 border-b-2" style={{ background: 'linear-gradient(180deg, hsl(35 48% 55%) 0%, hsl(35 48% 45%) 100%)', borderColor: 'hsl(35 40% 35%)' }} />
-
-          {/* Slot Window - with gold border */}
-          <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-xl p-1 shadow-inner-slot border-4" style={{ borderColor: 'hsl(35 48% 40%)' }}>
-            {/* Glass Reflection */}
-            <div className="absolute inset-0 slot-glass rounded-xl pointer-events-none z-10" />
+          {/* Main content area: Slot + Lever side by side on desktop, stacked on mobile */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             
-            {/* Polaroid Reel - fills the space */}
-            <div className="relative overflow-hidden rounded-lg bg-black flex items-center justify-center" style={{ width: '270px', height: '330px' }}>
-              {photos.length > 0 ? (
-                <SlotReel
-                  photos={photos}
-                  isSpinning={isSpinning}
-                  onSpinComplete={handleSpinComplete}
-                  onPhotoChange={playClickSound}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center p-6">
-                    <p className="text-muted-foreground font-display text-xl mb-4">
-                      AUCUNE PHOTO
-                    </p>
-                    <Link to="/manage">
-                      <Button variant="casino" size="lg">
-                        AJOUTER DES PHOTOS
-                      </Button>
-                    </Link>
-                  </div>
+            {/* Slot Section */}
+            <div className="flex flex-col">
+              {/* Gold Top Plate */}
+              <div className="h-6 rounded-t-xl mb-4 border-b-2" style={{ background: 'linear-gradient(180deg, hsl(35 48% 55%) 0%, hsl(35 48% 45%) 100%)', borderColor: 'hsl(35 40% 35%)' }} />
+
+              {/* Slot Window - with gold border */}
+              <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-xl p-1 shadow-inner-slot border-4" style={{ borderColor: 'hsl(35 48% 40%)' }}>
+                {/* Glass Reflection */}
+                <div className="absolute inset-0 slot-glass rounded-xl pointer-events-none z-10" />
+                
+                {/* Polaroid Reel - fills the space */}
+                <div className="relative overflow-hidden rounded-lg bg-black flex items-center justify-center" style={{ width: '270px', height: '330px' }}>
+                  {photos.length > 0 ? (
+                    <SlotReel
+                      photos={photos}
+                      isSpinning={isSpinning}
+                      onSpinComplete={handleSpinComplete}
+                      onPhotoChange={playClickSound}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center p-6">
+                        <p className="text-muted-foreground font-display text-xl mb-4">
+                          AUCUNE PHOTO
+                        </p>
+                        <Link to="/manage">
+                          <Button variant="casino" size="lg">
+                            AJOUTER DES PHOTOS
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Gold Bottom Plate - same height as top (h-6) */}
+              <div className="h-6 rounded-b-xl mt-4 border-t-2" style={{ background: 'linear-gradient(180deg, hsl(35 48% 45%) 0%, hsl(35 48% 55%) 100%)', borderColor: 'hsl(35 40% 55%)' }} />
             </div>
-          </div>
 
-          {/* Gold Bottom Plate */}
-          <div className="h-4 rounded-b-xl mt-4 border-t-2" style={{ background: 'linear-gradient(180deg, hsl(35 48% 45%) 0%, hsl(35 48% 55%) 100%)', borderColor: 'hsl(35 40% 55%)' }} />
-
-          {/* Bottom Bulbs */}
-          <CasinoBulbs position="bottom" count={9} isSpinning={isSpinning} />
-
-          {/* Side Bulbs */}
-          <CasinoBulbs position="left" count={7} isSpinning={isSpinning} />
-          <CasinoBulbs position="right" count={7} isSpinning={isSpinning} />
-        </div>
-
-        {/* Lever on the RIGHT (desktop) / BOTTOM (mobile) - Clickable */}
-        <div 
-          className={`relative cursor-pointer select-none transition-transform hover:scale-105 order-2 ${
-            !canSpin ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          onClick={handleSpin}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && handleSpin()}
-          aria-label="Tirer le levier pour tourner"
-        >
-          {/* Lever with frame and red button */}
-          <div className="relative">
-            {/* Fixed Frame/Mount - GREEN to match machine body */}
-            <div className="relative">
-              {/* Base plate - wider horizontal on mobile, vertical on desktop */}
-              <div className="w-44 h-14 sm:w-16 sm:h-36 rounded-xl border-4 shadow-lg" style={{ background: 'linear-gradient(180deg, hsl(150 30% 25%) 0%, hsl(150 35% 18%) 50%, hsl(150 30% 22%) 100%)', borderColor: 'hsl(35 48% 45%)' }} />
-              
-              {/* Slot/track for the button - darker green groove */}
-              <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 h-8 sm:w-10 sm:h-24 rounded-lg border-2 shadow-inner" style={{ background: 'hsl(150 35% 12%)', borderColor: 'hsl(150 30% 10%)' }} />
-              
-              {/* Red Button - animated: fast forward, slow return */}
-              <div
-                className="absolute top-1/2 -translate-y-1/2 sm:top-2 sm:translate-y-0 sm:left-1/2 sm:-translate-x-1/2"
-                style={{
-                  left: leverPulled ? '124px' : '16px',
-                  transform: `translateY(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
-                  transition: leverPulled 
-                    ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out' // Fast to right
-                    : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out', // Slow return
-                }}
-              >
-                {/* Desktop override styles - DARK RED/MAROON button */}
-                <div 
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-xl border-4 transition-all duration-300 relative ${
-                    canSpin 
-                      ? 'border-red-900 hover:shadow-[0_0_25px_rgba(139,0,0,0.6)]' 
-                      : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 border-gray-400'
-                  }`}
-                  style={{
-                    background: canSpin 
-                      ? 'linear-gradient(135deg, hsl(0 50% 35%) 0%, hsl(0 60% 25%) 50%, hsl(0 50% 20%) 100%)'
-                      : undefined,
-                    borderColor: canSpin ? 'hsl(0 40% 40%)' : undefined,
-                    boxShadow: canSpin 
-                      ? '0 6px 15px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.3), 0 0 12px rgba(139,0,0,0.3)' 
-                      : '0 6px 15px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.3)'
-                  }}
-                >
-                  {/* Shine effect on button */}
-                  <div className="absolute top-1 left-1.5 w-3 h-3 bg-white/40 rounded-full blur-sm" />
-                  <div className="absolute top-2 left-3 w-1 h-1 bg-white/60 rounded-full" />
+            {/* Lever Section - INSIDE the frame */}
+            <div 
+              className={`relative cursor-pointer select-none transition-transform hover:scale-105 ${
+                !canSpin ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={handleSpin}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleSpin()}
+              aria-label="Tirer le levier pour tourner"
+            >
+              {/* Lever with frame and red button */}
+              <div className="relative">
+                {/* Fixed Frame/Mount - GREEN to match machine body */}
+                <div className="relative">
+                  {/* Base plate - wider horizontal on mobile, vertical on desktop */}
+                  <div className="w-44 h-14 sm:w-16 sm:h-36 rounded-xl border-4 shadow-lg" style={{ background: 'linear-gradient(180deg, hsl(150 30% 20%) 0%, hsl(150 35% 14%) 50%, hsl(150 30% 18%) 100%)', borderColor: 'hsl(35 48% 45%)' }} />
+                  
+                  {/* Slot/track for the button - darker green groove */}
+                  <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 h-8 sm:w-10 sm:h-24 rounded-lg border-2 shadow-inner" style={{ background: 'hsl(150 35% 10%)', borderColor: 'hsl(150 30% 8%)' }} />
+                  
+                  {/* Red Button - animated: fast forward, slow return */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 sm:top-2 sm:translate-y-0 sm:left-1/2 sm:-translate-x-1/2"
+                    style={{
+                      left: leverPulled ? '124px' : '16px',
+                      transform: `translateY(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
+                      transition: leverPulled 
+                        ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out' // Fast to right
+                        : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out', // Slow return
+                    }}
+                  >
+                    {/* Desktop override styles - DARK RED/MAROON button */}
+                    <div 
+                      className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-xl border-4 transition-all duration-300 relative ${
+                        canSpin 
+                          ? 'border-red-900 hover:shadow-[0_0_25px_rgba(139,0,0,0.6)]' 
+                          : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 border-gray-400'
+                      }`}
+                      style={{
+                        background: canSpin 
+                          ? 'linear-gradient(135deg, hsl(0 50% 35%) 0%, hsl(0 60% 25%) 50%, hsl(0 50% 20%) 100%)'
+                          : undefined,
+                        borderColor: canSpin ? 'hsl(0 40% 40%)' : undefined,
+                        boxShadow: canSpin 
+                          ? '0 6px 15px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.3), 0 0 12px rgba(139,0,0,0.3)' 
+                          : '0 6px 15px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.3)'
+                      }}
+                    >
+                      {/* Shine effect on button */}
+                      <div className="absolute top-1 left-1.5 w-3 h-3 bg-white/40 rounded-full blur-sm" />
+                      <div className="absolute top-2 left-3 w-1 h-1 bg-white/60 rounded-full" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Bottom Bulbs */}
+          <CasinoBulbs position="bottom" count={11} isSpinning={isSpinning} />
+
+          {/* Side Bulbs */}
+          <CasinoBulbs position="left" count={7} isSpinning={isSpinning} />
+          <CasinoBulbs position="right" count={7} isSpinning={isSpinning} />
         </div>
       </div>
 
