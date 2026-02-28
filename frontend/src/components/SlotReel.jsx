@@ -12,18 +12,19 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
   useEffect(() => {
     if (isSpinning && photos.length > 0) {
       startTimeRef.current = Date.now();
-      totalSpinTimeRef.current = 3500 + Math.random() * 1500; // 3.5-5 seconds for longer spin
+      totalSpinTimeRef.current = 2000 + Math.random() * 500; // 2-2.5 seconds for 15 clicks
       
-      const initialSpeed = 120; // Much faster initial speed
+      const initialSpeed = 80; // Adjusted speed for 15 clicks
       const photoHeight = 300; // Height of one photo slot
       
-      // RANDOM: Add random starting distance to ensure random final photo
-      // More photos to scroll through (8-15 full cycles through the photos)
-      const randomCycles = 8 + Math.floor(Math.random() * 8);
-      const randomExtraPhotos = randomCycles * photos.length + Math.floor(Math.random() * photos.length);
-      let accumulatedDistance = randomExtraPhotos * photoHeight;
+      // Target exactly 15 photo changes (clicks)
+      // Random final photo selection
+      const targetClicks = 15;
+      const randomFinalIndex = Math.floor(Math.random() * photos.length);
+      let accumulatedDistance = randomFinalIndex * photoHeight;
       
-      let localIndex = Math.floor(accumulatedDistance / photoHeight) % photos.length;
+      let localIndex = randomFinalIndex;
+      let clickCount = 0;
       setCurrentIndex(localIndex);
       finalIndexRef.current = localIndex;
       
