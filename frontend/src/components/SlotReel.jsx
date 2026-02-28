@@ -12,84 +12,72 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
   useEffect(() => {
     if (isSpinning && photos.length > 0) {
       startTimeRef.current = Date.now();
-      totalSpinTimeRef.current = 2000 + Math.random() * 500; // 2-2.5 seconds for ~15 clicks
+      totalSpinTimeRef.current = 2200; // Fixed duration for consistent feel
       
-      const initialSpeed = 80; // Adjusted speed for 15 clicks
       const photoHeight = 300; // Height of one photo slot
       
-      // RANDOM: Select the final photo index randomly FIRST
+      // RANDOM: Select the final photo index randomly
       const randomFinalIndex = Math.floor(Math.random() * photos.length);
       finalIndexRef.current = randomFinalIndex;
       
-      // Calculate how many photos to scroll through (around 15 clicks)
-      // We need to end on randomFinalIndex
-      const minClicks = 12;
-      const maxExtraClicks = 6;
-      const totalClicks = minClicks + Math.floor(Math.random() * maxExtraClicks);
+      // Calculate total distance: ~15 clicks + land on random photo
+      const baseClicks = 14;
+      const totalDistance = (baseClicks * photos.length + randomFinalIndex) * photoHeight;
       
-      // Start from a position that will land on randomFinalIndex after totalClicks
-      const startIndex = ((randomFinalIndex - totalClicks) % photos.length + photos.length) % photos.length;
-      let accumulatedDistance = startIndex * photoHeight;
-      
-      let localIndex = startIndex;
-      let clickCount = 0;
-      setCurrentIndex(localIndex);
+      // Starting position
+      let lastIndex = -1;
       
       const animate = () => {
         const elapsed = Date.now() - startTimeRef.current;
         const progress = Math.min(elapsed / totalSpinTimeRef.current, 1);
         
-        // Custom easing: very fast at start, then progressively slower with a nice deceleration curve
+        // Custom easing: fast start, slow end (ease-out curve)
         let easedProgress;
-        if (progress < 0.3) {
-          // First 30%: stay fast (slight ease)
-          easedProgress = progress * 0.5;
-        } else if (progress < 0.7) {
-          // Middle 40%: gradual slowdown
-          const midProgress = (progress - 0.3) / 0.4;
-          easedProgress = 0.15 + midProgress * 0.45;
+        if (progress < 0.2) {
+          // First 20%: accelerate quickly
+          easedProgress = progress * 1.5;
+        } else if (progress < 0.6) {
+          // Middle: steady fast speed
+          const midProgress = (progress - 0.2) / 0.4;
+          easedProgress = 0.3 + midProgress * 0.35;
         } else {
-          // Last 30%: strong deceleration to stop
-          const endProgress = (progress - 0.7) / 0.3;
-          const easeOutQuint = 1 - Math.pow(1 - endProgress, 5);
-          easedProgress = 0.6 + easeOutQuint * 0.4;
+          // Last 40%: strong deceleration to stop smoothly
+          const endProgress = (progress - 0.6) / 0.4;
+          const easeOutQuart = 1 - Math.pow(1 - endProgress, 4);
+          easedProgress = 0.65 + easeOutQuart * 0.35;
         }
         
-        // Speed decreases based on eased progress
-        const currentSpeed = initialSpeed * (1 - easedProgress);
-        setSpeed(currentSpeed);
+        // Calculate current position based on eased progress
+        const currentDistance = totalDistance * easedProgress;
+        const currentOffset = currentDistance % photoHeight;
+        const currentIndex = Math.floor(currentDistance / photoHeight) % photos.length;
+        
+        // Update speed for blur effect
+        const speed = progress < 1 ? (1 - easedProgress) * 100 : 0;
+        setSpeed(speed);
+        setOffset(currentOffset);
+        
+        // Play click sound when photo changes
+        if (currentIndex !== lastIndex) {
+          lastIndex = currentIndex;
+          setCurrentIndex(currentIndex);
+          
+          if (onPhotoChange && progress < 0.98) {
+            onPhotoChange();
+          }
+        }
         
         if (progress < 1) {
-          accumulatedDistance += currentSpeed;
-          
-          // Calculate current offset within one photo height
-          const newOffset = accumulatedDistance % photoHeight;
-          setOffset(newOffset);
-          
-          // Update photo index when we pass a threshold
-          const newIndex = Math.floor(accumulatedDistance / photoHeight);
-          if (newIndex !== localIndex) {
-            localIndex = newIndex;
-            clickCount++;
-            const photoIndex = localIndex % photos.length;
-            setCurrentIndex(photoIndex);
-            
-            // Play click sound on EVERY photo change
-            if (onPhotoChange) {
-              onPhotoChange();
-            }
-          }
-          
           animationRef.current = requestAnimationFrame(animate);
         } else {
-          // Animation complete - snap to the pre-determined random final photo
+          // Animation complete - ensure we're on the final photo
           setOffset(0);
           setSpeed(0);
-          setCurrentIndex(finalIndexRef.current);
+          setCurrentIndex(randomFinalIndex);
           
           // Notify parent of the final selected photo
-          if (onSpinComplete && photos[finalIndexRef.current]) {
-            onSpinComplete(photos[finalIndexRef.current]);
+          if (onSpinComplete && photos[randomFinalIndex]) {
+            onSpinComplete(photos[randomFinalIndex]);
           }
         }
       };
