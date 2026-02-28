@@ -7,15 +7,6 @@ import { toast } from 'sonner';
 
 // Constants
 const MAX_PHOTOS = 250;
-const MAX_IMAGE_SIZE = 400; // Max width/height in pixels
-const JPEG_QUALITY = 0.6; // Compression quality (0.6 = 60%)
-const STORAGE_KEY = 'slotPhotos';
-
-// Generate stable rotations for photos
-function getRotation(id) {
-  const seed = typeof id === 'number' ? id : String(id).split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  return ((seed * 9301 + 49297) % 233280) / 233280 * 6 - 3;
-}
 
 // Compress and resize image
 async function compressImage(file) {
