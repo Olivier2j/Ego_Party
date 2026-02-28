@@ -136,7 +136,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             opacity: isSpinning ? 0.5 + normalizedOffset * 0.3 : 0,
           }}
         >
-          <div className="transform scale-[0.75] border-4 border-black rounded-sm shadow-lg" style={{ width: '240px', height: '240px' }}>
+          <div className="transform scale-[0.75] border-[3px] border-black rounded-sm shadow-lg" style={{ width: '240px', height: '240px' }}>
             <img
               src={prevPhoto?.src}
               alt=""
@@ -147,7 +147,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
 
         {/* Current photo (center) - Square with black border */}
         <div 
-          className={`border-4 border-black rounded-sm shadow-xl transform transition-transform duration-300 ${
+          className={`border-[3px] border-black rounded-sm shadow-xl transform transition-transform duration-300 ${
             !isSpinning ? 'scale-100' : 'scale-95'
           }`} 
           style={{ width: '250px', height: '250px' }}
@@ -167,7 +167,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             opacity: isSpinning ? 0.5 - normalizedOffset * 0.3 : 0,
           }}
         >
-          <div className="transform scale-[0.75] border-4 border-black rounded-sm shadow-lg" style={{ width: '240px', height: '240px' }}>
+          <div className="transform scale-[0.75] border-[3px] border-black rounded-sm shadow-lg" style={{ width: '240px', height: '240px' }}>
             <img
               src={nextPhoto?.src}
               alt=""

@@ -370,7 +370,7 @@ export default function PhotoManager() {
                 key={photo.id}
                 className="group relative transform hover:scale-105 transition-transform duration-300"
               >
-                <div className="aspect-square overflow-hidden rounded-sm border-4 border-black shadow-lg bg-gray-900">
+                <div className="aspect-square overflow-hidden rounded-sm border-[3px] border-black shadow-lg bg-gray-900">
                   <img
                     src={photo.src}
                     alt={photo.name}
