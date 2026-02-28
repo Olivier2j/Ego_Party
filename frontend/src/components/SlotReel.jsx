@@ -34,21 +34,9 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         const elapsed = Date.now() - startTimeRef.current;
         const progress = Math.min(elapsed / totalSpinTimeRef.current, 1);
         
-        // Custom easing: fast start, slow end
-        let easedProgress;
-        if (progress < 0.3) {
-          // First 30%: fast
-          easedProgress = progress * 0.6;
-        } else if (progress < 0.7) {
-          // Middle 40%: gradual slowdown
-          const midProgress = (progress - 0.3) / 0.4;
-          easedProgress = 0.18 + midProgress * 0.42;
-        } else {
-          // Last 30%: strong deceleration
-          const endProgress = (progress - 0.7) / 0.3;
-          const easeOutQuart = 1 - Math.pow(1 - endProgress, 4);
-          easedProgress = 0.6 + easeOutQuart * 0.4;
-        }
+        // Ease-out: FAST at start, SLOW at end (decelerating)
+        // Using ease-out-quart curve
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
         
         // Calculate current position based on eased progress
         const currentDistance = totalDistance * easedProgress;
@@ -56,8 +44,8 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         const clicksCompleted = Math.floor(currentDistance / photoHeight);
         const currentPhotoIndex = (startIndex + clicksCompleted) % photos.length;
         
-        // Update speed for blur effect
-        const speed = progress < 1 ? (1 - easedProgress) * 80 : 0;
+        // Update speed for blur effect (higher at start, lower at end)
+        const speed = progress < 1 ? Math.pow(1 - progress, 2) * 80 : 0;
         setSpeed(speed);
         setOffset(currentOffset);
         
