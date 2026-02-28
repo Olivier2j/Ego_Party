@@ -368,16 +368,15 @@ export default function PhotoManager() {
           )}
         </div>
 
-        {/* Photos Grid */}
+        {/* Photos Grid - Square photos with black border */}
         {photos.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {photos.map((photo) => (
               <div
                 key={photo.id}
-                className="group relative polaroid-frame transform hover:rotate-0 hover:scale-105 transition-transform duration-300"
-                style={{ transform: `rotate(${getRotation(photo.id)}deg)` }}
+                className="group relative transform hover:scale-105 transition-transform duration-300"
               >
-                <div className="aspect-[3/4] overflow-hidden rounded-sm bg-gray-200">
+                <div className="aspect-square overflow-hidden rounded-sm border-4 border-black shadow-lg bg-gray-900">
                   <img
                     src={photo.src}
                     alt={photo.name}
