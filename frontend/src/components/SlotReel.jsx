@@ -132,50 +132,47 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         <div 
           className="absolute left-1/2 -translate-x-1/2 transition-opacity"
           style={{ 
-            top: '-280px',
+            top: '-260px',
             opacity: isSpinning ? 0.5 + normalizedOffset * 0.3 : 0,
           }}
         >
-          <div className="polaroid-frame transform scale-[0.75] flex flex-col" style={{ width: '250px', aspectRatio: '1/1.21' }}>
-            <div className="flex-1 overflow-hidden rounded-sm bg-gray-200">
-              <img
-                src={prevPhoto?.src}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Current photo (center) */}
-        <div className={`polaroid-frame transform transition-transform duration-300 flex flex-col ${
-          !isSpinning ? 'scale-100' : 'scale-95'
-        }`} style={{ width: '260px', aspectRatio: '1/1.21' }}>
-          <div className="flex-1 overflow-hidden rounded-sm bg-gray-200">
+          <div className="transform scale-[0.75] border-4 border-black rounded-sm shadow-lg" style={{ width: '240px', height: '240px' }}>
             <img
-              src={displayPhoto?.src}
+              src={prevPhoto?.src}
               alt=""
               className="w-full h-full object-cover"
             />
           </div>
         </div>
 
+        {/* Current photo (center) - Square with black border */}
+        <div 
+          className={`border-4 border-black rounded-sm shadow-xl transform transition-transform duration-300 ${
+            !isSpinning ? 'scale-100' : 'scale-95'
+          }`} 
+          style={{ width: '250px', height: '250px' }}
+        >
+          <img
+            src={displayPhoto?.src}
+            alt=""
+            className="w-full h-full object-cover"
+          />
+        </div>
+
         {/* Next photo (exiting to bottom) */}
         <div 
           className="absolute left-1/2 -translate-x-1/2 transition-opacity"
           style={{ 
-            bottom: '-280px',
+            bottom: '-260px',
             opacity: isSpinning ? 0.5 - normalizedOffset * 0.3 : 0,
           }}
         >
-          <div className="polaroid-frame transform scale-[0.75] flex flex-col" style={{ width: '250px', aspectRatio: '1/1.21' }}>
-            <div className="flex-1 overflow-hidden rounded-sm bg-gray-200">
-              <img
-                src={nextPhoto?.src}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
+          <div className="transform scale-[0.75] border-4 border-black rounded-sm shadow-lg" style={{ width: '240px', height: '240px' }}>
+            <img
+              src={nextPhoto?.src}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
       </div>
