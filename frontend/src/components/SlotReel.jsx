@@ -1,13 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// Cryptographically secure random number generator
+function getSecureRandomIndex(max) {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] % max;
+}
+
 export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoChange }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Initialize with a random index on mount
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    if (typeof window !== 'undefined' && photos && photos.length > 0) {
+      return getSecureRandomIndex(photos.length);
+    }
+    return 0;
+  });
   const [offset, setOffset] = useState(0);
   const [speed, setSpeed] = useState(0);
   const animationRef = useRef(null);
   const startTimeRef = useRef(0);
   const totalSpinTimeRef = useRef(3000);
   const finalIndexRef = useRef(0);
+
+  // Reset to random photo when photos change (app reopened with new photos)
+  useEffect(() => {
+    if (photos && photos.length > 0 && !isSpinning) {
+      const randomIndex = getSecureRandomIndex(photos.length);
+      setCurrentIndex(randomIndex);
+    }
+  }, [photos.length]);
 
   useEffect(() => {
     if (isSpinning && photos.length > 0) {
@@ -16,9 +37,10 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
       
       const photoHeight = 300;
       
-      // Random starting point
-      const randomStart = Math.floor(Math.random() * photos.length);
-      const scrollClicks = 14;
+      // Secure random starting point for each spin
+      const randomStart = getSecureRandomIndex(photos.length);
+      // Random number of clicks (12-16) for extra unpredictability
+      const scrollClicks = 12 + getSecureRandomIndex(5);
       const totalDistance = scrollClicks * photoHeight;
       
       let lastDisplayedIndex = randomStart;
