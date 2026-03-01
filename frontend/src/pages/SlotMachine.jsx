@@ -249,17 +249,23 @@ export default function SlotMachine() {
                   
                   {/* Red Button - Mobile: horizontal (left/right), Desktop: vertical (top/bottom) */}
                   <div
-                    className="absolute sm:left-1/2 sm:-translate-x-1/2"
-                    style={{
+                    className="absolute"
+                    style={isMobile ? {
                       // Mobile: horizontal movement
-                      left: window.innerWidth < 640 ? (leverPulled ? '124px' : '16px') : '50%',
-                      top: window.innerWidth >= 640 ? (leverPulled ? '88px' : '16px') : '50%',
-                      transform: window.innerWidth < 640 
-                        ? `translateY(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`
-                        : `translateX(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
+                      left: leverPulled ? '124px' : '16px',
+                      top: '50%',
+                      transform: `translateY(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
                       transition: leverPulled 
-                        ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out'
-                        : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), top 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out',
+                        ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out'
+                        : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out',
+                    } : {
+                      // Desktop: vertical movement
+                      left: '50%',
+                      top: leverPulled ? '88px' : '16px',
+                      transform: `translateX(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
+                      transition: leverPulled 
+                        ? 'top 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out'
+                        : 'top 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out',
                     }}
                   >
                     {/* DARK RED/MAROON button #A51C30 - Always red */}
