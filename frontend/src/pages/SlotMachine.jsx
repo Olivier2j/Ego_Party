@@ -19,11 +19,20 @@ export default function SlotMachine() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [leverPulled, setLeverPulled] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   const audioRefs = useRef({});
   const clickAudioPoolRef = useRef([]); // Pool of audio elements for rapid clicks
   const clickPoolIndexRef = useRef(0);
   const celebrationTimerRef = useRef(null);
+
+  // Detect mobile vs desktop
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Load photos from localStorage
   useEffect(() => {
