@@ -33,25 +33,30 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         
         // Calculate current position
         const currentDistance = totalDistance * easedProgress;
-        const clicksCompleted = Math.floor(currentDistance / photoHeight);
-        const currentPhotoIndex = (randomStart + clicksCompleted) % photos.length;
-        
-        // Calculate offset within current photo
         const rawOffset = currentDistance % photoHeight;
         
-        // Smooth offset that naturally settles to 0
-        const offset = rawOffset * (1 - Math.pow(progress, 4));
+        // Determine which photo is visually dominant
+        // If offset > half the photo height, the NEXT photo is more visible
+        const clicksCompleted = Math.floor(currentDistance / photoHeight);
+        const visualPhotoIndex = rawOffset > photoHeight * 0.4 
+          ? (randomStart + clicksCompleted + 1) % photos.length
+          : (randomStart + clicksCompleted) % photos.length;
+        
+        // Offset relative to the visual photo
+        const visualOffset = rawOffset > photoHeight * 0.4
+          ? (rawOffset - photoHeight) * (1 - Math.pow(progress, 4))
+          : rawOffset * (1 - Math.pow(progress, 4));
         
         // Update speed for blur effect
         const speed = Math.pow(1 - progress, 2) * 60;
         setSpeed(speed);
-        setOffset(offset);
+        setOffset(visualOffset);
         
-        // Play click sound when photo changes
-        if (currentPhotoIndex !== lastDisplayedIndex) {
-          lastDisplayedIndex = currentPhotoIndex;
-          setCurrentIndex(currentPhotoIndex);
-          finalIndexRef.current = currentPhotoIndex; // Track the displayed photo
+        // Update displayed photo
+        if (visualPhotoIndex !== lastDisplayedIndex) {
+          lastDisplayedIndex = visualPhotoIndex;
+          setCurrentIndex(visualPhotoIndex);
+          finalIndexRef.current = visualPhotoIndex;
           
           if (onPhotoChange) {
             onPhotoChange();
@@ -61,11 +66,11 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         if (progress < 1) {
           animationRef.current = requestAnimationFrame(animate);
         } else {
-          // Animation complete - use the LAST DISPLAYED photo (the one with the rising effect)
+          // Animation complete - keep the visually displayed photo
           setOffset(0);
           setSpeed(0);
+          setCurrentIndex(finalIndexRef.current);
           
-          // Notify parent with the photo that was actually shown settling
           if (onSpinComplete && photos[finalIndexRef.current]) {
             onSpinComplete(photos[finalIndexRef.current]);
           }
