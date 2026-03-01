@@ -12,23 +12,17 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
   useEffect(() => {
     if (isSpinning && photos.length > 0) {
       startTimeRef.current = Date.now();
-      totalSpinTimeRef.current = 2500; // Slightly longer for smoother end
+      totalSpinTimeRef.current = 2500;
       
-      const photoHeight = 300; // Height of one photo slot
+      const photoHeight = 300;
       
-      // RANDOM: Select the final photo index randomly
-      const randomFinalIndex = Math.floor(Math.random() * photos.length);
-      finalIndexRef.current = randomFinalIndex;
-      
-      // Scroll through 14 photos, then settle on the 15th (final)
+      // Random starting point
+      const randomStart = Math.floor(Math.random() * photos.length);
       const scrollClicks = 14;
       const totalDistance = scrollClicks * photoHeight;
       
-      // Calculate starting index to land on randomFinalIndex
-      const startIndex = ((randomFinalIndex - scrollClicks) % photos.length + photos.length) % photos.length;
-      
-      let lastIndex = startIndex;
-      setCurrentIndex(startIndex);
+      let lastDisplayedIndex = randomStart;
+      setCurrentIndex(randomStart);
       
       const animate = () => {
         const elapsed = Date.now() - startTimeRef.current;
@@ -40,9 +34,9 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         // Calculate current position
         const currentDistance = totalDistance * easedProgress;
         const clicksCompleted = Math.floor(currentDistance / photoHeight);
-        const currentPhotoIndex = (startIndex + clicksCompleted) % photos.length;
+        const currentPhotoIndex = (randomStart + clicksCompleted) % photos.length;
         
-        // Calculate offset within current photo (0 to photoHeight)
+        // Calculate offset within current photo
         const rawOffset = currentDistance % photoHeight;
         
         // Smooth offset that naturally settles to 0
@@ -54,9 +48,10 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         setOffset(offset);
         
         // Play click sound when photo changes
-        if (currentPhotoIndex !== lastIndex) {
-          lastIndex = currentPhotoIndex;
+        if (currentPhotoIndex !== lastDisplayedIndex) {
+          lastDisplayedIndex = currentPhotoIndex;
           setCurrentIndex(currentPhotoIndex);
+          finalIndexRef.current = currentPhotoIndex; // Track the displayed photo
           
           if (onPhotoChange) {
             onPhotoChange();
@@ -66,13 +61,13 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         if (progress < 1) {
           animationRef.current = requestAnimationFrame(animate);
         } else {
-          // Animation complete
+          // Animation complete - use the LAST DISPLAYED photo (the one with the rising effect)
           setOffset(0);
           setSpeed(0);
           
-          // Notify parent of the final selected photo
-          if (onSpinComplete && photos[randomFinalIndex]) {
-            onSpinComplete(photos[randomFinalIndex]);
+          // Notify parent with the photo that was actually shown settling
+          if (onSpinComplete && photos[finalIndexRef.current]) {
+            onSpinComplete(photos[finalIndexRef.current]);
           }
         }
       };
