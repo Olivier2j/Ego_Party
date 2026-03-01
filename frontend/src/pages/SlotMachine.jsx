@@ -238,15 +238,19 @@ export default function SlotMachine() {
                   {/* Slot/track for the button - darker green groove */}
                   <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 h-8 sm:w-10 sm:h-24 rounded-lg border-2 shadow-inner" style={{ background: 'hsl(150 35% 10%)', borderColor: 'hsl(150 30% 8%)' }} />
                   
-                  {/* Red Button - animated: fast forward, slow return */}
+                  {/* Red Button - Mobile: horizontal (left/right), Desktop: vertical (top/bottom) */}
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 sm:top-2 sm:translate-y-0 sm:left-1/2 sm:-translate-x-1/2"
+                    className="absolute sm:left-1/2 sm:-translate-x-1/2"
                     style={{
-                      left: leverPulled ? '124px' : '16px',
-                      transform: `translateY(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
+                      // Mobile: horizontal movement
+                      left: window.innerWidth < 640 ? (leverPulled ? '124px' : '16px') : '50%',
+                      top: window.innerWidth >= 640 ? (leverPulled ? '88px' : '16px') : '50%',
+                      transform: window.innerWidth < 640 
+                        ? `translateY(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`
+                        : `translateX(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
                       transition: leverPulled 
-                        ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out' // Fast to right
-                        : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out', // Slow return
+                        ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out'
+                        : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), top 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out',
                     }}
                   >
                     {/* DARK RED/MAROON button #A51C30 - Always red */}
