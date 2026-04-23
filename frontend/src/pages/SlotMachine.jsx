@@ -131,13 +131,26 @@ export default function SlotMachine() {
     // Slowly return the lever
     setLeverPulled(false);
     
-    // Start celebration (title blinking) for 1.25 seconds
+    // Start celebration — blinking stops when the "stop" sound ends naturally
     setIsCelebrating(true);
-    celebrationTimerRef.current = setTimeout(() => {
-      setIsCelebrating(false);
-      stopSound('stop');
-    }, 1250);
-  }, [playSound, stopSound]);
+    const stopAudio = audioRefs.current.stop;
+    if (stopAudio) {
+      const onEnded = () => {
+        setIsCelebrating(false);
+        stopAudio.removeEventListener('ended', onEnded);
+      };
+      stopAudio.addEventListener('ended', onEnded);
+      // Safety fallback in case 'ended' doesn't fire (e.g. tab suspended)
+      celebrationTimerRef.current = setTimeout(() => {
+        setIsCelebrating(false);
+        stopAudio.removeEventListener('ended', onEnded);
+      }, 2500);
+    } else {
+      celebrationTimerRef.current = setTimeout(() => {
+        setIsCelebrating(false);
+      }, 1250);
+    }
+  }, [playSound]);
 
   // Cleanup timer on unmount
   useEffect(() => {
