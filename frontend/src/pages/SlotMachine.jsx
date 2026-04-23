@@ -131,11 +131,11 @@ export default function SlotMachine() {
     // Slowly return the lever
     setLeverPulled(false);
     
-    // Start celebration (title blinking) for 2.5 seconds
+    // Start celebration (title blinking) for 1.25 seconds
     setIsCelebrating(true);
     celebrationTimerRef.current = setTimeout(() => {
       setIsCelebrating(false);
-    }, 2500);
+    }, 1250);
   }, [playSound]);
 
   // Cleanup timer on unmount
