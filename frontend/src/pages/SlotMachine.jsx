@@ -135,8 +135,9 @@ export default function SlotMachine() {
     setIsCelebrating(true);
     celebrationTimerRef.current = setTimeout(() => {
       setIsCelebrating(false);
+      stopSound('stop');
     }, 1250);
-  }, [playSound]);
+  }, [playSound, stopSound]);
 
   // Cleanup timer on unmount
   useEffect(() => {
