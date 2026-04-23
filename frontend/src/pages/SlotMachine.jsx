@@ -4,6 +4,8 @@ import { Button } from '../components/ui/button';
 import { Settings, Volume2, VolumeX } from 'lucide-react';
 import SlotReel from '../components/SlotReel';
 import CasinoBulbs from '../components/CasinoBulbs';
+import usePWAMode from '../hooks/usePWAMode';
+import builtinPhotos from '../assets/photos/builtin';
 
 // Sound URLs - Wheel spinning sound like "The Price is Right"
 const SOUNDS = {
@@ -20,7 +22,8 @@ export default function SlotMachine() {
   const [leverPulled, setLeverPulled] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
+  const isPWA = usePWAMode();
+
   const audioRefs = useRef({});
   const clickAudioPoolRef = useRef([]); // Pool of audio elements for rapid clicks
   const clickPoolIndexRef = useRef(0);
@@ -34,15 +37,22 @@ export default function SlotMachine() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load photos from localStorage
+  // Load photos — built-in bundle in PWA (standalone), localStorage in browser
   useEffect(() => {
+    if (isPWA) {
+      setPhotos(builtinPhotos);
+      return;
+    }
     const savedPhotos = localStorage.getItem('slotPhotos');
     if (savedPhotos) {
-      const parsed = JSON.parse(savedPhotos);
-      // Use functional update to avoid lint warning
-      setPhotos(() => parsed);
+      try {
+        const parsed = JSON.parse(savedPhotos);
+        setPhotos(() => parsed);
+      } catch {
+        setPhotos([]);
+      }
     }
-  }, []);
+  }, [isPWA]);
 
   // Preload sounds
   useEffect(() => {
@@ -157,11 +167,13 @@ export default function SlotMachine() {
         >
           {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
         </Button>
-        <Link to="/manage">
-          <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80">
-            <Settings className="h-5 w-5" />
-          </Button>
-        </Link>
+        {!isPWA && (
+          <Link to="/manage" data-testid="open-photo-manager-btn">
+            <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Slot Machine Body with Lever INSIDE the frame */}
@@ -211,11 +223,13 @@ export default function SlotMachine() {
                         <p className="text-muted-foreground font-display text-xl mb-4">
                           AUCUNE PHOTO
                         </p>
-                        <Link to="/manage">
-                          <Button variant="casino" size="lg">
-                            AJOUTER DES PHOTOS
-                          </Button>
-                        </Link>
+                        {!isPWA && (
+                          <Link to="/manage">
+                            <Button variant="casino" size="lg">
+                              AJOUTER DES PHOTOS
+                            </Button>
+                          </Link>
+                        )}
                       </div>
                     </div>
                   )}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { ArrowLeft, Upload, Trash2, Image, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import usePWAMode from '../hooks/usePWAMode';
 
 // Constants
 const MAX_PHOTOS = 250;
@@ -76,6 +77,7 @@ function formatBytes(bytes) {
 }
 
 export default function PhotoManager() {
+  const isPWA = usePWAMode();
   const [photos, setPhotos] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
