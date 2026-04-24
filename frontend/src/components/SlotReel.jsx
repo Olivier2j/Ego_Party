@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// Detect mobile once at module load
+const IS_MOBILE_UA = typeof navigator !== 'undefined' && /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+
 // Cryptographically secure random number generator
 function getSecureRandomIndex(max) {
   const array = new Uint32Array(1);
@@ -125,7 +128,8 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
   const nextPhoto = getPhotoAtIndex(currentIndex + 1);
 
   // Calculate blur based on speed (more blur when faster)
-  const blurAmount = Math.min(speed / 6, 6);
+  // Mobile: blur disabled entirely — CSS filter is a major perf killer on mobile GPUs
+  const blurAmount = IS_MOBILE_UA ? 0 : Math.min(speed / 6, 6);
   
   // Normalize offset for smooth animation (0 to 1)
   const normalizedOffset = offset / 300;
@@ -136,8 +140,9 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
       <div 
         className="relative"
         style={{ 
-          transform: `translateY(${offset * 0.3}px)`,
-          filter: `blur(${blurAmount}px)`,
+          transform: `translate3d(0, ${offset * 0.3}px, 0)`,
+          filter: blurAmount > 0 ? `blur(${blurAmount}px)` : 'none',
+          willChange: isSpinning ? 'transform' : 'auto',
           transition: isSpinning ? 'none' : 'filter 0.3s ease-out',
         }}
       >
@@ -153,6 +158,8 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             <img
               src={prevPhoto?.src}
               alt=""
+              loading="eager"
+              decoding="async"
               className="w-[102%] h-[102%] object-cover -ml-[1%] -mt-[1%]"
             />
           </div>
@@ -168,6 +175,8 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
           <img
             src={displayPhoto?.src}
             alt=""
+            loading="eager"
+            decoding="async"
             className="w-[102%] h-[102%] object-cover -ml-[1%] -mt-[1%]"
           />
         </div>
@@ -184,6 +193,8 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             <img
               src={nextPhoto?.src}
               alt=""
+              loading="eager"
+              decoding="async"
               className="w-[102%] h-[102%] object-cover -ml-[1%] -mt-[1%]"
             />
           </div>

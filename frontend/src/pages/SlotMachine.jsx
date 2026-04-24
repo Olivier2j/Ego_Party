@@ -64,6 +64,21 @@ export default function SlotMachine() {
     setUsingBuiltin(true);
   }, [isPWA]);
 
+  // Preload all photos in the background to avoid decode stalls during spin animation
+  useEffect(() => {
+    if (!photos || photos.length === 0) return;
+    const imgs = photos.map((p) => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = p.src;
+      return img;
+    });
+    return () => {
+      // Release refs so GC can collect if component unmounts
+      imgs.length = 0;
+    };
+  }, [photos]);
+
   // Preload sounds
   useEffect(() => {
     Object.entries(SOUNDS).forEach(([key, url]) => {
