@@ -23,6 +23,7 @@ export default function SlotMachine() {
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const isPWA = usePWAMode();
+  const [usingBuiltin, setUsingBuiltin] = useState(false);
 
   const audioRefs = useRef({});
   const clickAudioPoolRef = useRef([]); // Pool of audio elements for rapid clicks
@@ -37,21 +38,30 @@ export default function SlotMachine() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load photos — built-in bundle in PWA (standalone), localStorage in browser
+  // Load photos — built-in bundle when PWA OR when localStorage is empty;
+  // otherwise the user's uploaded photos from localStorage.
   useEffect(() => {
     if (isPWA) {
       setPhotos(builtinPhotos);
+      setUsingBuiltin(true);
       return;
     }
     const savedPhotos = localStorage.getItem('slotPhotos');
     if (savedPhotos) {
       try {
         const parsed = JSON.parse(savedPhotos);
-        setPhotos(() => parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPhotos(() => parsed);
+          setUsingBuiltin(false);
+          return;
+        }
       } catch {
-        setPhotos([]);
+        /* fall through to builtin */
       }
     }
+    // Empty / unreadable localStorage → use builtin photos as default
+    setPhotos(builtinPhotos);
+    setUsingBuiltin(true);
   }, [isPWA]);
 
   // Preload sounds
