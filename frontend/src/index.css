@@ -307,6 +307,21 @@
     box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
 }
 
+/* Mobile-optimized bulbs: single small glow, no heavy double-shadow */
+.casino-bulb-mobile {
+    box-shadow: 0 0 6px currentColor;
+}
+
+/* Mobile-optimized blink: opacity only, no scale/filter (GPU-cheap) */
+@keyframes bulb-blink-mobile {
+    0% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+.animate-bulb-blink-mobile {
+    animation: bulb-blink-mobile 0.2s ease-in-out infinite alternate;
+}
+
 /* Scrollbar styling for upload area */
 ::-webkit-scrollbar {
     width: 8px;

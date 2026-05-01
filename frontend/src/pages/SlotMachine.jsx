@@ -64,19 +64,17 @@ export default function SlotMachine() {
     setUsingBuiltin(true);
   }, [isPWA]);
 
-  // Preload all photos in the background to avoid decode stalls during spin animation
+  // Preload photos in the background — but only a small sample (adjacent pages)
+  // to avoid pinning ~100 MB of decoded JPEGs in RAM on mobile. The Service
+  // Worker + browser cache handle the rest on-demand.
   useEffect(() => {
     if (!photos || photos.length === 0) return;
-    const imgs = photos.map((p) => {
+    const sample = photos.slice(0, Math.min(20, photos.length));
+    sample.forEach((p) => {
       const img = new Image();
       img.decoding = 'async';
       img.src = p.src;
-      return img;
     });
-    return () => {
-      // Release refs so GC can collect if component unmounts
-      imgs.length = 0;
-    };
   }, [photos]);
 
   // Preload sounds
