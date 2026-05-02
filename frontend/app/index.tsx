@@ -53,8 +53,8 @@ const SH = _dim.height || 915;
 const MACHINE_W = Math.min(SW * 0.94, 460);
 const MACHINE_H = Math.min(SH * 0.92, 820);
 
-// Photo viewer (square ratio 1:1)
-const PHOTO_W = MACHINE_W * 0.78;
+// Photo viewer (square ratio 1:1, reduced 10%)
+const PHOTO_W = MACHINE_W * 0.7;
 const PHOTO_H = PHOTO_W;
 
 // Slider
@@ -80,6 +80,32 @@ const cryptoRandomInt = (max: number) => {
     (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
   return Math.abs(n) % max;
 };
+
+// Cubic bezier evaluation (for the same easing curve as the animation):
+// y(t) returns the eased progress at parametric t in [0,1].
+const cubicBezierY = (p1x: number, p1y: number, p2x: number, p2y: number) => {
+  // Sample t along the bezier so we can map progress -> time.
+  // Returns a function: progressToTime(progress in [0,1]) -> t in [0,1]
+  const N = 200;
+  const xs: number[] = new Array(N + 1);
+  const ys: number[] = new Array(N + 1);
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const u = 1 - t;
+    xs[i] =
+      3 * u * u * t * p1x + 3 * u * t * t * p2x + t * t * t;
+    ys[i] =
+      3 * u * u * t * p1y + 3 * u * t * t * p2y + t * t * t;
+  }
+  return (progress: number) => {
+    // Find t such that ys[t] >= progress
+    for (let i = 0; i <= N; i++) {
+      if (ys[i] >= progress) return xs[i];
+    }
+    return 1;
+  };
+};
+const progressToTime = cubicBezierY(0.15, 0.7, 0.2, 1.0);
 
 // ===== Bulbs =====
 const Bulb = ({
@@ -154,6 +180,16 @@ const BulbCol = ({
   }
   return <View style={styles.bulbCol}>{items}</View>;
 };
+
+// ===== Bronze bandeau (3D-look horizontal bar above/below photo) =====
+const BronzeBand = React.memo(() => (
+  <View style={styles.bandWrap}>
+    <View style={styles.bandTop} />
+    <View style={styles.bandMid} />
+    <View style={styles.bandBot} />
+  </View>
+));
+BronzeBand.displayName = "BronzeBand";
 
 // ===== Photo Strip (the scrolling reel) =====
 type PhotoStripProps = {
@@ -377,21 +413,17 @@ export default function Index() {
     s.replayAsync().catch(() => {});
   }, []);
 
+  // Per-photo tick: schedule exactly one tick per photo boundary, aligned
+  // to the same cubic-bezier easing as the spin animation.
   const scheduleTicks = useCallback(() => {
-    // Cubic-bezier-like deceleration tick schedule
-    // ~22 ticks total over SPIN_DURATION, accelerating gap (slower toward end)
     tickTimersRef.current.forEach((t) => clearTimeout(t));
     tickTimersRef.current = [];
-    let t = 0;
-    let i = 0;
-    while (t < SPIN_DURATION - 50 && i < 30) {
-      const progress = t / SPIN_DURATION;
-      // gap grows from 50ms to 200ms
-      const gap = 45 + progress * progress * 220;
-      const id = setTimeout(playTick, t);
+    const photosToCross = STRIP_ITEMS - 1;
+    for (let k = 1; k <= photosToCross; k++) {
+      const progress = k / photosToCross;
+      const t = progressToTime(progress) * SPIN_DURATION;
+      const id = setTimeout(playTick, Math.round(t));
       tickTimersRef.current.push(id);
-      t += gap;
-      i++;
     }
   }, [playTick]);
 
@@ -424,13 +456,11 @@ export default function Index() {
     // Haptic at start
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
-    // Tick scheduling
-    scheduleTicks();
-
-    // Animate translateY: from 0 to -(STRIP_ITEMS-1)*PHOTO_H with deceleration
+    // Animate translateY from 0 to -(STRIP_ITEMS-1)*PHOTO_H with deceleration.
     const target = -(STRIP_ITEMS - 1) * PHOTO_H;
-    // small delay so React commits stripIndices
     setTimeout(() => {
+      // Ticks scheduled to match the easing — exactly one per photo crossed.
+      scheduleTicks();
       translateY.value = withTiming(
         target,
         {
@@ -455,7 +485,10 @@ export default function Index() {
         () => {}
       );
 
-      // Title blink synced with ding
+      // Reset slider IMMEDIATELY at the photo reveal (not at end of blink).
+      setResetSignal((v) => v + 1);
+
+      // Title blink (red ↔ bronze) synced with ding (~2030 ms)
       const blinkInterval = 180; // 11 toggles ~ 2030ms
       let toggles = 0;
       const totalToggles = Math.floor(DING_DURATION / blinkInterval);
@@ -467,19 +500,18 @@ export default function Index() {
           if (blinkTimerRef.current) clearInterval(blinkTimerRef.current);
           setTitleBlink(true);
           setSpinning(false);
-          setResetSignal((v) => v + 1);
         }
       }, blinkInterval);
     },
     [playDing]
   );
 
-  // Animated title style for blink
+  // Animated title style — blinks RED ↔ bronze during reveal, returns to bronze after.
   const titleStyle = useMemo(
     () => [
       styles.title,
       fontsLoaded && { fontFamily: "Bungee_400Regular" },
-      { opacity: titleBlink ? 1 : 0.18 },
+      { color: titleBlink ? COLORS.bronzeLight : COLORS.red },
     ],
     [titleBlink, fontsLoaded]
   );
@@ -518,8 +550,8 @@ export default function Index() {
             <View style={styles.bronzeInner}>
               {/* Green machine body */}
               <View style={styles.body}>
-                {/* Title */}
-                <View style={styles.titleBlock}>
+                {/* Title — vertically centered between top of body and top bronze band */}
+                <View style={styles.titleSection}>
                   <Text style={titleStyle} testID="title-ego-party">
                     EGO PARTY
                   </Text>
@@ -535,7 +567,7 @@ export default function Index() {
                 </View>
 
                 {/* Bronze bandeau top */}
-                <View style={styles.bronzeBand} />
+                <BronzeBand />
 
                 {/* Photo viewer */}
                 <View style={styles.photoFrame} testID="photo-frame">
@@ -560,7 +592,7 @@ export default function Index() {
                 </View>
 
                 {/* Bronze bandeau bottom */}
-                <View style={styles.bronzeBand} />
+                <BronzeBand />
 
                 {/* Slider lever */}
                 <SliderLever
@@ -718,11 +750,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 8,
-    justifyContent: "space-between",
   },
-  titleBlock: {
+  titleSection: {
+    width: "100%",
+    flex: 1,
     alignItems: "center",
-    marginTop: 4,
+    justifyContent: "center",
   },
   title: {
     color: COLORS.bronzeLight,
@@ -737,18 +770,29 @@ const styles = StyleSheet.create({
     color: COLORS.bronze,
     fontSize: Math.min(14, MACHINE_W * 0.038),
     letterSpacing: 6,
-    marginTop: 4,
+    marginTop: 6,
   },
-  bronzeBand: {
-    width: PHOTO_W + 24,
-    height: 14,
+  // ===== Bronze bandeau (3-band 3D look) =====
+  bandWrap: {
+    width: PHOTO_W + 40,
+    height: 28,
+    marginVertical: 10,
+    borderRadius: 6,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.bronzeDark,
+  },
+  bandTop: {
+    flex: 1,
+    backgroundColor: COLORS.bronzeLight,
+  },
+  bandMid: {
+    flex: 2,
     backgroundColor: COLORS.bronze,
-    borderRadius: 4,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderTopColor: COLORS.bronzeLight,
-    borderBottomColor: COLORS.bronzeDark,
-    marginVertical: 8,
+  },
+  bandBot: {
+    flex: 1,
+    backgroundColor: COLORS.bronzeDark,
   },
   photoFrame: {
     width: PHOTO_W + 18,
@@ -822,9 +866,9 @@ const styles = StyleSheet.create({
   ballOuter: {
     position: "absolute",
     left: 3,
-    top: (SLIDER_TRACK_H - BALL) / 2,
+    top: 0,
+    bottom: 0,
     width: BALL,
-    height: BALL,
     alignItems: "center",
     justifyContent: "center",
   },
