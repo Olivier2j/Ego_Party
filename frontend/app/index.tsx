@@ -51,7 +51,8 @@ const _dim = Dimensions.get("window");
 const SW = _dim.width || 412;
 const SH = _dim.height || 915;
 const MACHINE_W = Math.min(SW * 0.94, 460);
-const MACHINE_H = Math.min(SH * 0.92, 820);
+// Reduce machine height by 10% (keep width unchanged).
+const MACHINE_H = Math.min(SH * 0.92, 820) * 0.9;
 
 // Photo viewer (square ratio 1:1, reduced 10%)
 const PHOTO_W = MACHINE_W * 0.7;
@@ -327,10 +328,12 @@ export default function Index() {
         });
       } catch {}
 
-      // Pre-load sounds in parallel (best effort)
+      // Pre-load sounds in parallel (best effort).
+      // Pool size = STRIP_ITEMS so each scheduled tick uses a fresh instance
+      // (avoids replay collisions that make ticks "feel random").
       try {
         const tickPromises: Promise<Audio.Sound | null>[] = [];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < STRIP_ITEMS; i++) {
           tickPromises.push(
             Audio.Sound.createAsync(
               require("../assets/sounds/tick.wav"),
@@ -341,8 +344,8 @@ export default function Index() {
           );
         }
         const dingPromise = Audio.Sound.createAsync(
-          require("../assets/sounds/ding.wav"),
-          { volume: 0.9 }
+          require("../assets/sounds/ding.mp3"),
+          { volume: 1.0 }
         )
           .then((r) => r.sound)
           .catch(() => null);
