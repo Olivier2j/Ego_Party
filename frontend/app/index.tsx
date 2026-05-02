@@ -594,16 +594,18 @@ export default function Index() {
                 {/* Bronze bandeau bottom */}
                 <BronzeBand />
 
-                {/* Slider lever */}
-                <SliderLever
-                  onTrigger={triggerSpin}
-                  resetSignal={resetSignal}
-                  disabled={spinning}
-                />
+                {/* Slider + hint, centered vertically in the lower flex space */}
+                <View style={styles.sliderSection}>
+                  <SliderLever
+                    onTrigger={triggerSpin}
+                    resetSignal={resetSignal}
+                    disabled={spinning}
+                  />
 
-                <Text style={styles.footerHint} testID="footer-hint">
-                  {spinning ? "🎰 SPINNING…" : "Slide the red knob right →"}
-                </Text>
+                  <Text style={styles.footerHint} testID="footer-hint">
+                    {spinning ? "🎰 SPINNING…" : "Slide the red knob right →"}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
@@ -752,6 +754,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   titleSection: {
+    width: "100%",
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sliderSection: {
     width: "100%",
     flex: 1,
     alignItems: "center",
