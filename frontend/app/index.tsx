@@ -279,10 +279,8 @@ export default function Index() {
   const [titleBlink, setTitleBlink] = useState(true);
 
   const lastIdxRef = useRef<number>(currentIdx);
-  const tickSoundsRef = useRef<Audio.Sound[]>([]);
-  const tickIdxRef = useRef(0);
+  const clicksReelRef = useRef<Audio.Sound | null>(null);
   const dingSoundRef = useRef<Audio.Sound | null>(null);
-  const tickTimersRef = useRef<NodeJS.Timeout[]>([]);
   const blinkTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const translateY = useSharedValue(0);
@@ -310,21 +308,20 @@ export default function Index() {
         });
       } catch {}
 
-      // Pre-load sounds in parallel (best effort).
-      // Pool size = STRIP_ITEMS so each scheduled tick uses a fresh instance
-      // (avoids replay collisions that make ticks "feel random").
+      // Pre-load sounds. The "click reel" is a SINGLE pre-rendered WAV
+      // containing all 17 clicks at the exact instants computed from
+      // easeOutCubicInverse(k/(N-1)) * SPIN_DURATION * ACTIVE_RATIO.
+      // Playing one audio file (vs. 17 setTimeout calls to replayAsync)
+      // bypasses iOS's variable per-replay latency → perfect sync with
+      // the visual photo transitions.
       try {
-        const tickPromises: Promise<Audio.Sound | null>[] = [];
-        for (let i = 0; i < STRIP_ITEMS; i++) {
-          tickPromises.push(
-            Audio.Sound.createAsync(
-              require("../assets/sounds/tick.wav"),
-              { volume: 0.55 }
-            )
-              .then((r) => r.sound)
-              .catch(() => null)
-          );
-        }
+        const reelPromise = Audio.Sound.createAsync(
+          require("../assets/sounds/clicks_reel.wav"),
+          { volume: 0.85 }
+        )
+          .then((r) => r.sound)
+          .catch(() => null);
+
         const dingPromise = Audio.Sound.createAsync(
           require("../assets/sounds/ding.mp3"),
           { volume: 1.0 }
@@ -332,14 +329,9 @@ export default function Index() {
           .then((r) => r.sound)
           .catch(() => null);
 
-        const [ticks, ding] = await Promise.all([
-          Promise.all(tickPromises),
-          dingPromise,
-        ]);
+        const [reel, ding] = await Promise.all([reelPromise, dingPromise]);
         if (cancelled) return;
-        tickSoundsRef.current = ticks.filter(
-          (s): s is Audio.Sound => s !== null
-        );
+        clicksReelRef.current = reel;
         dingSoundRef.current = ding;
       } catch {}
 
@@ -375,20 +367,15 @@ export default function Index() {
   // Cleanup
   useEffect(() => {
     return () => {
-      tickTimersRef.current.forEach((t) => clearTimeout(t));
       if (blinkTimerRef.current) clearInterval(blinkTimerRef.current);
-      tickSoundsRef.current.forEach((s) => {
-        s.unloadAsync().catch(() => {});
-      });
+      clicksReelRef.current?.unloadAsync().catch(() => {});
       dingSoundRef.current?.unloadAsync().catch(() => {});
     };
   }, []);
 
-  const playTick = useCallback(() => {
-    const pool = tickSoundsRef.current;
-    if (!pool.length) return;
-    const s = pool[tickIdxRef.current % pool.length];
-    tickIdxRef.current++;
+  const playClicksReel = useCallback(() => {
+    const s = clicksReelRef.current;
+    if (!s) return;
     s.replayAsync().catch(() => {});
   }, []);
 
@@ -397,31 +384,6 @@ export default function Index() {
     if (!s) return;
     s.replayAsync().catch(() => {});
   }, []);
-
-  // Per-photo tick: pre-compute the exact instant each photo will arrive
-  // in the viewport by inverting the same easing curve as the animation
-  // (Easing.out(cubic)). One setTimeout per photo → 1 click = 1 photo,
-  // perfectly in sync regardless of deceleration.
-  // AUDIO_LATENCY: on iOS, playAsync/replayAsync has ~30-50 ms of latency
-  // before the sound is audibly produced. We schedule the timeouts that
-  // amount earlier so the click is HEARD when the photo APPEARS.
-  const AUDIO_LATENCY = 35;
-  const scheduleTicks = useCallback(() => {
-    tickTimersRef.current.forEach((t) => clearTimeout(t));
-    tickTimersRef.current = [];
-    tickIdxRef.current = 0; // fresh pool for this spin
-    const photosToCross = STRIP_ITEMS - 1;
-    for (let k = 1; k <= photosToCross; k++) {
-      const y = k / photosToCross;                    // visual progress [0..1]
-      const t = easeOutCubicInverse(y);               // normalized time [0..1]
-      const ms = Math.max(
-        0,
-        Math.round(t * SPIN_DURATION * ACTIVE_RATIO) - AUDIO_LATENCY
-      );
-      const id = setTimeout(playTick, ms);
-      tickTimersRef.current.push(id);
-    }
-  }, [playTick]);
 
   const triggerSpin = useCallback(() => {
     if (spinning || !assetsReady) return;
@@ -453,8 +415,10 @@ export default function Index() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
     // Animate translateY from 0 to -(STRIP_ITEMS-1)*PHOTO_H with deceleration.
-    // Schedule ticks at the SAME JS-frame as withTiming() so the timer
-    // baseline matches the animation start as closely as possible.
+    // The clicks_reel.wav already contains all 17 clicks at the exact
+    // instants computed from easeOutCubicInverse(k/(N-1)) * SPIN_DURATION
+    // * ACTIVE_RATIO — playing it as ONE file lets the iOS audio engine
+    // handle internal timing perfectly (no per-replay JS latency).
     const target = -(STRIP_ITEMS - 1) * PHOTO_H;
     requestAnimationFrame(() => {
       translateY.value = withTiming(
@@ -469,9 +433,9 @@ export default function Index() {
           }
         }
       );
-      scheduleTicks();
+      playClicksReel();
     });
-  }, [assetsReady, scheduleTicks, spinning, translateY]);
+  }, [assetsReady, playClicksReel, spinning, translateY]);
 
   const handleSpinEnd = useCallback(
     (winner: number) => {
