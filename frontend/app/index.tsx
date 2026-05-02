@@ -53,14 +53,14 @@ const SH = _dim.height || 915;
 const MACHINE_W = Math.min(SW * 0.94, 460);
 const MACHINE_H = Math.min(SH * 0.92, 820);
 
-// Photo viewer (landscape ratio ~16:10)
+// Photo viewer (square ratio 1:1)
 const PHOTO_W = MACHINE_W * 0.78;
-const PHOTO_H = Math.round(PHOTO_W * 0.62);
+const PHOTO_H = PHOTO_W;
 
 // Slider
 const SLIDER_TRACK_W = MACHINE_W * 0.78;
 const SLIDER_TRACK_H = 56;
-const BALL = 60;
+const BALL = 44;
 const SLIDER_MAX = SLIDER_TRACK_W - BALL - 6;
 
 // Bulbs
