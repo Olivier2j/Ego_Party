@@ -389,15 +389,6 @@ export default function Index() {
     if (spinning || !assetsReady) return;
     setSpinning(true);
 
-    // Interrupt any in-progress blink + ding from the previous spin so the
-    // user can fire a new spin without waiting for the celebration to end.
-    if (blinkTimerRef.current) {
-      clearInterval(blinkTimerRef.current);
-      blinkTimerRef.current = null;
-    }
-    setTitleBlink(true);
-    dingSoundRef.current?.stopAsync().catch(() => {});
-
     // Pick winner (no immediate repeat)
     let winner = cryptoRandomInt(PHOTO_COUNT);
     if (PHOTO_COUNT > 1) {
@@ -455,12 +446,8 @@ export default function Index() {
         () => {}
       );
 
-      // Reset slider IMMEDIATELY at the photo reveal.
-      // Re-enable the slider RIGHT NOW (before the blink+ding finish) so the
-      // user can launch a new spin without waiting; the in-progress blink and
-      // ding will be interrupted automatically when triggerSpin runs again.
+      // Reset slider IMMEDIATELY at the photo reveal (not at end of blink).
       setResetSignal((v) => v + 1);
-      setSpinning(false);
 
       // Title blink (red ↔ bronze) synced with ding (~2090 ms)
       const blinkInterval = 180; // ~11 toggles ≈ 2030 ms
@@ -473,6 +460,7 @@ export default function Index() {
         if (toggles >= totalToggles) {
           if (blinkTimerRef.current) clearInterval(blinkTimerRef.current);
           setTitleBlink(true);
+          setSpinning(false);
         }
       }, blinkInterval);
     },
