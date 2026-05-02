@@ -58,8 +58,8 @@ const MACHINE_H = Math.min(SH * 0.92, 820) * 0.9;
 const PHOTO_W = MACHINE_W * 0.7;
 const PHOTO_H = PHOTO_W;
 
-// Slider
-const SLIDER_TRACK_W = MACHINE_W * 0.78;
+// Slider — track shortened by 10% relative to previous version
+const SLIDER_TRACK_W = MACHINE_W * 0.78 * 0.9;
 const SLIDER_TRACK_H = 56;
 const BALL = 44;
 const SLIDER_MAX = SLIDER_TRACK_W - BALL - 6;
