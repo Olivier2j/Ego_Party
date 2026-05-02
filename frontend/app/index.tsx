@@ -70,9 +70,10 @@ const BULBS_PER_ROW = Math.floor((MACHINE_W - 24) / 22);
 const BULBS_PER_COL = Math.floor((MACHINE_H - 24) / 28);
 
 // Animation constants
-const STRIP_ITEMS = 28; // photos in scroll strip
-const SPIN_DURATION = 2000;
-const DING_DURATION = 2030;
+const STRIP_ITEMS = 18; // photos in scroll strip (= ticks count + 1)
+const SPIN_DURATION = 2500;
+const ACTIVE_RATIO = 0.92; // photos travel during the first 92% of duration
+const DING_DURATION = 2090;
 
 // ===== Helpers =====
 const cryptoRandomInt = (max: number) => {
