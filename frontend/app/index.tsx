@@ -82,31 +82,12 @@ const cryptoRandomInt = (max: number) => {
   return Math.abs(n) % max;
 };
 
-// Cubic bezier evaluation (for the same easing curve as the animation):
-// y(t) returns the eased progress at parametric t in [0,1].
-const cubicBezierY = (p1x: number, p1y: number, p2x: number, p2y: number) => {
-  // Sample t along the bezier so we can map progress -> time.
-  // Returns a function: progressToTime(progress in [0,1]) -> t in [0,1]
-  const N = 200;
-  const xs: number[] = new Array(N + 1);
-  const ys: number[] = new Array(N + 1);
-  for (let i = 0; i <= N; i++) {
-    const t = i / N;
-    const u = 1 - t;
-    xs[i] =
-      3 * u * u * t * p1x + 3 * u * t * t * p2x + t * t * t;
-    ys[i] =
-      3 * u * u * t * p1y + 3 * u * t * t * p2y + t * t * t;
-  }
-  return (progress: number) => {
-    // Find t such that ys[t] >= progress
-    for (let i = 0; i <= N; i++) {
-      if (ys[i] >= progress) return xs[i];
-    }
-    return 1;
-  };
-};
-const progressToTime = cubicBezierY(0.15, 0.7, 0.2, 1.0);
+// Closed-form inverse of Easing.out(Easing.cubic).
+// Easing.out(cubic): y = 1 - (1 - t)^3  →  t = 1 - (1 - y)^(1/3)
+// Use this to pre-compute the exact instant at which each photo arrives
+// in the viewport, so each tick can be scheduled with setTimeout
+// perfectly in sync with the UI-thread animation.
+const easeOutCubicInverse = (y: number) => 1 - Math.pow(1 - y, 1 / 3);
 
 // ===== Bulbs =====
 const Bulb = ({
@@ -416,16 +397,27 @@ export default function Index() {
     s.replayAsync().catch(() => {});
   }, []);
 
-  // Per-photo tick: schedule exactly one tick per photo boundary, aligned
-  // to the same cubic-bezier easing as the spin animation.
+  // Per-photo tick: pre-compute the exact instant each photo will arrive
+  // in the viewport by inverting the same easing curve as the animation
+  // (Easing.out(cubic)). One setTimeout per photo → 1 click = 1 photo,
+  // perfectly in sync regardless of deceleration.
+  // AUDIO_LATENCY: on iOS, playAsync/replayAsync has ~30-50 ms of latency
+  // before the sound is audibly produced. We schedule the timeouts that
+  // amount earlier so the click is HEARD when the photo APPEARS.
+  const AUDIO_LATENCY = 35;
   const scheduleTicks = useCallback(() => {
     tickTimersRef.current.forEach((t) => clearTimeout(t));
     tickTimersRef.current = [];
+    tickIdxRef.current = 0; // fresh pool for this spin
     const photosToCross = STRIP_ITEMS - 1;
     for (let k = 1; k <= photosToCross; k++) {
-      const progress = k / photosToCross;
-      const t = progressToTime(progress) * SPIN_DURATION;
-      const id = setTimeout(playTick, Math.round(t));
+      const y = k / photosToCross;                    // visual progress [0..1]
+      const t = easeOutCubicInverse(y);               // normalized time [0..1]
+      const ms = Math.max(
+        0,
+        Math.round(t * SPIN_DURATION * ACTIVE_RATIO) - AUDIO_LATENCY
+      );
+      const id = setTimeout(playTick, ms);
       tickTimersRef.current.push(id);
     }
   }, [playTick]);
@@ -460,15 +452,15 @@ export default function Index() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
     // Animate translateY from 0 to -(STRIP_ITEMS-1)*PHOTO_H with deceleration.
+    // Schedule ticks at the SAME JS-frame as withTiming() so the timer
+    // baseline matches the animation start as closely as possible.
     const target = -(STRIP_ITEMS - 1) * PHOTO_H;
-    setTimeout(() => {
-      // Ticks scheduled to match the easing — exactly one per photo crossed.
-      scheduleTicks();
+    requestAnimationFrame(() => {
       translateY.value = withTiming(
         target,
         {
           duration: SPIN_DURATION,
-          easing: Easing.bezier(0.15, 0.7, 0.2, 1.0),
+          easing: Easing.out(Easing.cubic),
         },
         (finished) => {
           if (finished) {
@@ -476,7 +468,8 @@ export default function Index() {
           }
         }
       );
-    }, 30);
+      scheduleTicks();
+    });
   }, [assetsReady, scheduleTicks, spinning, translateY]);
 
   const handleSpinEnd = useCallback(
