@@ -250,7 +250,6 @@ const SliderLever = ({ onTrigger, resetSignal, disabled }: SliderProps) => {
     <View style={styles.sliderWrap} testID="slider-wrap">
       <View style={styles.sliderTrack}>
         <Animated.View style={[styles.sliderFill, fillStyle]} />
-        <Text style={styles.sliderHint}>SLIDE TO SPIN ▶</Text>
         <GestureDetector gesture={pan}>
           <Animated.View style={[styles.ballOuter, ballStyle]} testID="slider-ball">
             <View style={styles.ballInner}>
@@ -562,10 +561,6 @@ export default function Index() {
                     resetSignal={resetSignal}
                     disabled={spinning}
                   />
-
-                  <Text style={styles.footerHint} testID="footer-hint">
-                    {spinning ? "🎰 SPINNING…" : "Slide the red knob right →"}
-                  </Text>
                 </View>
               </View>
             </View>
