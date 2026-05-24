@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   Dimensions,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -282,6 +283,16 @@ export default function Index() {
   const dingSoundRef = useRef<Audio.Sound | null>(null);
   const blinkTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // ===== Web-only HTMLAudioElement fallback for iOS Safari =====
+  // iOS Safari blocks audio playback unless it is started inside a synchronous
+  // user-gesture handler. expo-av on web does NOT perform this unlock for us,
+  // so on web we maintain a parallel pair of HTMLAudioElement instances that we
+  // "warm up" (muted play then pause) on the first slider touch — afterwards
+  // they can be replayed silently from any context for the whole session.
+  const webReelRef = useRef<HTMLAudioElement | null>(null);
+  const webDingRef = useRef<HTMLAudioElement | null>(null);
+  const webAudioUnlockedRef = useRef(false);
+
   const translateY = useSharedValue(0);
 
   // Pre-load assets + sounds (non-blocking, robust on web/native)
@@ -334,6 +345,34 @@ export default function Index() {
         dingSoundRef.current = ding;
       } catch {}
 
+      // On web, also build a parallel HTMLAudioElement pool so we can unlock
+      // iOS Safari's autoplay restriction on the user's first touch.
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        try {
+          const reelAsset = Asset.fromModule(
+            require("../assets/sounds/clicks_reel.wav")
+          );
+          const dingAsset = Asset.fromModule(
+            require("../assets/sounds/ding.mp3")
+          );
+          await Promise.all([
+            reelAsset.downloadAsync().catch(() => {}),
+            dingAsset.downloadAsync().catch(() => {}),
+          ]);
+          const reelEl = new window.Audio(reelAsset.uri);
+          reelEl.preload = "auto";
+          reelEl.volume = 0.85;
+          const dingEl = new window.Audio(dingAsset.uri);
+          dingEl.preload = "auto";
+          dingEl.volume = 1.0;
+          // Trigger metadata/buffer load eagerly
+          reelEl.load();
+          dingEl.load();
+          webReelRef.current = reelEl;
+          webDingRef.current = dingEl;
+        } catch {}
+      }
+
       if (!cancelled && !timedOut) {
         clearTimeout(fallbackTimer);
         setAssetsReady(true);
@@ -369,6 +408,10 @@ export default function Index() {
       if (blinkTimerRef.current) clearInterval(blinkTimerRef.current);
       clicksReelRef.current?.unloadAsync().catch(() => {});
       dingSoundRef.current?.unloadAsync().catch(() => {});
+      try {
+        webReelRef.current?.pause();
+        webDingRef.current?.pause();
+      } catch {}
     };
   }, []);
 
@@ -480,7 +523,14 @@ export default function Index() {
   // (No blocking loader to avoid web SSR + slow hydration locking the UI.)
 
   return (
-    <SafeAreaView style={styles.root} testID="ego-party-screen">
+    <SafeAreaView
+      style={styles.root}
+      testID="ego-party-screen"
+      // Web/iOS-Safari only: unlock <audio> elements on the first user touch
+      // anywhere in the app. No-op on native (onTouchStart is a regular
+      // RN prop and just gets ignored if we don't use the responder system).
+      onTouchStart={unlockWebAudio}
+    >
       <View style={styles.machineWrap}>
         {/* Outer bronze double frame with bulbs */}
         <View style={styles.machineOuter}>
@@ -823,6 +873,51 @@ const styles = StyleSheet.create({
   },
   sliderHint: {
     color: COLORS.bronze,
+    fontSize: 12,
+    letterSpacing: 3,
+    fontWeight: "700",
+  },
+  ballOuter: {
+    position: "absolute",
+    left: 3,
+    top: 0,
+    bottom: 0,
+    width: BALL,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ballInner: {
+    width: BALL,
+    height: BALL,
+    borderRadius: BALL / 2,
+    backgroundColor: COLORS.red,
+    borderWidth: 2,
+    borderColor: COLORS.bronze,
+    shadowColor: "#000",
+    shadowOpacity: 0.6,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 4,
+    elevation: 6,
+    overflow: "hidden",
+    alignItems: "center",
+  },
+  ballHighlight: {
+    position: "absolute",
+    top: 6,
+    width: BALL * 0.55,
+    height: BALL * 0.32,
+    backgroundColor: "rgba(255,255,255,0.45)",
+    borderRadius: BALL,
+  },
+  footerHint: {
+    color: COLORS.bronze,
+    fontSize: 11,
+    letterSpacing: 2,
+    marginTop: 6,
+    opacity: 0.85,
+  },
+});
+: COLORS.bronze,
     fontSize: 12,
     letterSpacing: 3,
     fontWeight: "700",
