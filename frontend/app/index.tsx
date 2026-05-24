@@ -207,9 +207,10 @@ type SliderProps = {
   onTrigger: () => void;
   resetSignal: number;
   disabled: boolean;
+  onTouchUnlock?: () => void;
 };
 
-const SliderLever = ({ onTrigger, resetSignal, disabled }: SliderProps) => {
+const SliderLever = ({ onTrigger, resetSignal, disabled, onTouchUnlock }: SliderProps) => {
   const x = useSharedValue(0);
   const startX = useSharedValue(0);
 
@@ -248,7 +249,18 @@ const SliderLever = ({ onTrigger, resetSignal, disabled }: SliderProps) => {
   }));
 
   return (
-    <View style={styles.sliderWrap} testID="slider-wrap">
+    <View
+      style={styles.sliderWrap}
+      testID="slider-wrap"
+      // CRITICAL iOS WebKit fix: this onTouchStart fires SYNCHRONOUSLY
+      // inside the native DOM touchstart event of the slider area — which
+      // IS a valid user-gesture token. PanGesture's onEnd → runOnJS
+      // chain runs ~200-500ms later, by which time iOS has revoked the
+      // gesture token. Calling unlockWebAudio() here arms the audio
+      // hardware in the gesture lineage so the later src.start(0) is
+      // routed to the speaker.
+      onTouchStart={onTouchUnlock}
+    >
       <View style={styles.sliderTrack}>
         <Animated.View style={[styles.sliderFill, fillStyle]} />
         <GestureDetector gesture={pan}>
@@ -914,6 +926,9 @@ export default function Index() {
                     onTrigger={triggerSpin}
                     resetSignal={resetSignal}
                     disabled={spinning}
+                    onTouchUnlock={
+                      Platform.OS === "web" ? unlockWebAudio : undefined
+                    }
                   />
                 </View>
               </View>
