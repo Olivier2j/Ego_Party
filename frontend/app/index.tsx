@@ -473,6 +473,12 @@ export default function Index() {
     const ctx = webAudioCtxRef.current;
     if (!ctx || !buf) return false;
     try {
+      // iOS WebKit sometimes re-suspends the context between gestures.
+      // Force-resume right before each play so src.start(0) actually
+      // routes to the hardware.
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(() => {});
+      }
       const src = ctx.createBufferSource();
       src.buffer = buf;
       const gain = ctx.createGain();
@@ -544,12 +550,18 @@ export default function Index() {
         ctx = new Ctx();
         webAudioCtxRef.current = ctx;
         ctxCreated = true;
-        // Prime silent buffer to fully wake the iOS audio session
-        const silent = ctx!.createBuffer(1, 1, 22050);
-        const silentSrc = ctx!.createBufferSource();
-        silentSrc.buffer = silent;
-        silentSrc.connect(ctx!.destination);
-        silentSrc.start(0);
+        // iOS WebKit refuses to consider a 1-sample silent buffer as a
+        // "real" play — the audio hardware stays unarmed. Instead, fire
+        // a real (but inaudible) 50ms 20Hz oscillator. Gain 0.0001 keeps
+        // it below human hearing threshold while still being a NON-ZERO
+        // signal that WebKit accepts as legitimate hardware activation.
+        const osc = ctx!.createOscillator();
+        const g = ctx!.createGain();
+        g.gain.value = 0.0001;
+        osc.connect(g).connect(ctx!.destination);
+        osc.frequency.value = 20;
+        osc.start();
+        osc.stop(ctx!.currentTime + 0.05);
         if (ctx!.state === "suspended") {
           ctx!.resume().catch(() => {});
         }
@@ -587,6 +599,8 @@ export default function Index() {
           reelBuf: !!r,
           dingBuf: !!d,
         }));
+      }).catch((e) => {
+        console.error("[EgoParty] DECODE FAIL", e);
       });
     }
     // ---- HTMLAudio fallback unlock (muted play+pause+rewind) ----
@@ -616,29 +630,22 @@ export default function Index() {
     setAudioDbg((d) => ({ ...d, ctx: ctxCreated, unlocked: true }));
   }, []);
 
-  // Belt-and-suspenders: also attach a native DOM listener on document so
-  // the unlock fires for ANY first user gesture (even if RN-Web's
-  // onTouchStart wrapper somehow loses the user-gesture flag on Safari).
+  // Belt-and-suspenders: listen to touchend + click on document.
+  // iOS WebKit only validates a user gesture at touchend (or click for
+  // mouse/pointer), NOT at touchstart. Listening on touchstart unlocks
+  // too early and iOS considers the gesture spent before any real audio
+  // call can ride on it.
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     const fire = () => {
       unlockWebAudio();
-      document.removeEventListener("touchstart", fire, true);
       document.removeEventListener("touchend", fire, true);
-      document.removeEventListener("pointerdown", fire, true);
-      document.removeEventListener("mousedown", fire, true);
       document.removeEventListener("click", fire, true);
     };
-    document.addEventListener("touchstart", fire, { capture: true, passive: true });
     document.addEventListener("touchend", fire, true);
-    document.addEventListener("pointerdown", fire, true);
-    document.addEventListener("mousedown", fire, true);
     document.addEventListener("click", fire, true);
     return () => {
-      document.removeEventListener("touchstart", fire, true);
       document.removeEventListener("touchend", fire, true);
-      document.removeEventListener("pointerdown", fire, true);
-      document.removeEventListener("mousedown", fire, true);
       document.removeEventListener("click", fire, true);
     };
   }, [unlockWebAudio]);
@@ -689,6 +696,13 @@ export default function Index() {
   const triggerSpin = useCallback(() => {
     if (spinning || !assetsReady) return;
     setSpinning(true);
+
+    // Belt-and-suspenders: if this is the very first user gesture (the
+    // user swiped the lever before touching anywhere else), call the
+    // unlock SYNCHRONOUSLY here so the AudioContext gets created in the
+    // same call stack as the gesture. Otherwise iOS WebKit refuses to
+    // route sound to hardware.
+    unlockWebAudio();
 
     // Pick winner (no immediate repeat)
     let winner = cryptoRandomInt(PHOTO_COUNT);
@@ -749,6 +763,7 @@ export default function Index() {
     playClicksReel,
     spinning,
     translateY,
+    unlockWebAudio,
   ]);
 
   const handleSpinEnd = useCallback(
