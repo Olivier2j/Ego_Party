@@ -283,14 +283,13 @@ export default function Index() {
   const dingSoundRef = useRef<Audio.Sound | null>(null);
   const blinkTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ===== Web-only HTMLAudioElement fallback for iOS Safari =====
-  // iOS Safari blocks audio playback unless it is started inside a synchronous
-  // user-gesture handler. expo-av on web does NOT perform this unlock for us,
-  // so on web we maintain a parallel pair of HTMLAudioElement instances that we
-  // "warm up" (muted play then pause) on the first slider touch — afterwards
-  // they can be replayed silently from any context for the whole session.
-  const webReelRef = useRef<HTMLAudioElement | null>(null);
-  const webDingRef = useRef<HTMLAudioElement | null>(null);
+  // ===== Web-only Web Audio API for iOS Safari low-latency playback =====
+  // HTMLAudioElement.play() has 700-1200 ms of startup latency on iOS Safari
+  // even after the standard unlock pattern. Web Audio API's AudioBufferSource
+  // has <50 ms latency once the AudioContext is resumed inside a user gesture.
+  const webAudioCtxRef = useRef<AudioContext | null>(null);
+  const webReelBufferRef = useRef<AudioBuffer | null>(null);
+  const webDingBufferRef = useRef<AudioBuffer | null>(null);
   const webAudioUnlockedRef = useRef(false);
 
   const translateY = useSharedValue(0);
@@ -345,8 +344,11 @@ export default function Index() {
         dingSoundRef.current = ding;
       } catch {}
 
-      // On web, also build a parallel HTMLAudioElement pool so we can unlock
-      // iOS Safari's autoplay restriction on the user's first touch.
+      // On web, build a parallel Web Audio API pipeline (AudioContext +
+      // pre-decoded AudioBuffers) so playback latency is <50 ms on iOS Safari
+      // instead of ~1 s with HTMLAudioElement. The AudioContext is created
+      // eagerly in suspended state; we will .resume() it on the first user
+      // touch (see unlockWebAudio).
       if (Platform.OS === "web" && typeof window !== "undefined") {
         try {
           const reelAsset = Asset.fromModule(
@@ -359,17 +361,39 @@ export default function Index() {
             reelAsset.downloadAsync().catch(() => {}),
             dingAsset.downloadAsync().catch(() => {}),
           ]);
-          const reelEl = new window.Audio(reelAsset.uri);
-          reelEl.preload = "auto";
-          reelEl.volume = 0.85;
-          const dingEl = new window.Audio(dingAsset.uri);
-          dingEl.preload = "auto";
-          dingEl.volume = 1.0;
-          // Trigger metadata/buffer load eagerly
-          reelEl.load();
-          dingEl.load();
-          webReelRef.current = reelEl;
-          webDingRef.current = dingEl;
+          const Ctx =
+            (window as any).AudioContext ||
+            (window as any).webkitAudioContext;
+          if (Ctx) {
+            const ctx: AudioContext = new Ctx();
+            const fetchBuf = async (uri: string) => {
+              const arr = await fetch(uri).then((r) => r.arrayBuffer());
+              return await new Promise<AudioBuffer>((resolve, reject) => {
+                // Both callback and Promise forms — Safari supports the
+                // callback form on all versions; modern browsers return a
+                // Promise from decodeAudioData.
+                try {
+                  const p = ctx.decodeAudioData(
+                    arr,
+                    (buf) => resolve(buf),
+                    (err) => reject(err)
+                  );
+                  if (p && typeof (p as Promise<AudioBuffer>).then === "function") {
+                    (p as Promise<AudioBuffer>).then(resolve, reject);
+                  }
+                } catch (e) {
+                  reject(e);
+                }
+              });
+            };
+            const [reelBuf, dingBuf] = await Promise.all([
+              fetchBuf(reelAsset.uri).catch(() => null),
+              fetchBuf(dingAsset.uri).catch(() => null),
+            ]);
+            webAudioCtxRef.current = ctx;
+            webReelBufferRef.current = reelBuf;
+            webDingBufferRef.current = dingBuf;
+          }
         } catch {}
       }
 
@@ -409,77 +433,109 @@ export default function Index() {
       clicksReelRef.current?.unloadAsync().catch(() => {});
       dingSoundRef.current?.unloadAsync().catch(() => {});
       try {
-        webReelRef.current?.pause();
-        webDingRef.current?.pause();
+        webAudioCtxRef.current?.close();
       } catch {}
     };
+  }, []);
+
+  // ===== Web playback via Web Audio API (low-latency) =====
+  const playBuffer = useCallback((buf: AudioBuffer | null, gainVal: number) => {
+    const ctx = webAudioCtxRef.current;
+    if (!ctx || !buf) return;
+    try {
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const gain = ctx.createGain();
+      gain.gain.value = gainVal;
+      src.connect(gain).connect(ctx.destination);
+      src.start(0);
+    } catch {}
   }, []);
 
   const playClicksReel = useCallback(() => {
     if (Platform.OS === "web") {
-      const el = webReelRef.current;
-      if (el) {
-        try {
-          el.pause();
-          el.currentTime = 0;
-          el.play().catch(() => {});
-        } catch {}
-        return;
-      }
+      playBuffer(webReelBufferRef.current, 0.85);
+      return;
     }
     const s = clicksReelRef.current;
     if (!s) return;
     s.replayAsync().catch(() => {});
-  }, []);
+  }, [playBuffer]);
 
   const playDing = useCallback(() => {
     if (Platform.OS === "web") {
-      const el = webDingRef.current;
-      if (el) {
-        try {
-          el.pause();
-          el.currentTime = 0;
-          el.play().catch(() => {});
-        } catch {}
-        return;
-      }
+      playBuffer(webDingBufferRef.current, 1.0);
+      return;
     }
     const s = dingSoundRef.current;
     if (!s) return;
     s.replayAsync().catch(() => {});
-  }, []);
+  }, [playBuffer]);
 
-  // iOS-Safari audio unlock: run inside a synchronous user-gesture handler
-  // (onTouchStart on the root view). Plays each clip MUTED then pauses and
-  // rewinds, which permanently authorizes WebKit to play them programmatically
-  // later in the same session. No-op on native.
+  // iOS-Safari audio unlock: must be called inside a synchronous user-gesture
+  // handler. Resumes the AudioContext (suspended at creation under iOS rules)
+  // and primes the output by scheduling a silent zero-duration BufferSource.
+  // No-op on native.
   const unlockWebAudio = useCallback(() => {
     if (Platform.OS !== "web") return;
     if (webAudioUnlockedRef.current) return;
+    const ctx = webAudioCtxRef.current;
+    if (!ctx) return;
     webAudioUnlockedRef.current = true;
-    const unlock = (el: HTMLAudioElement | null) => {
-      if (!el) return;
-      try {
-        const prevVol = el.volume;
-        el.muted = true;
-        const p = el.play();
-        const restore = () => {
-          try {
-            el.pause();
-            el.currentTime = 0;
-            el.muted = false;
-            el.volume = prevVol;
-          } catch {}
-        };
-        if (p && typeof (p as Promise<void>).then === "function") {
-          (p as Promise<void>).then(restore).catch(restore);
-        } else {
-          restore();
-        }
-      } catch {}
-    };
-    unlock(webReelRef.current);
-    unlock(webDingRef.current);
+    try {
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(() => {});
+      }
+      // Prime the audio pipeline with a 1-sample silent buffer.
+      const silent = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = silent;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch {}
+  }, []);
+
+  // ===== Strip image pre-decoder (web only) =====
+  // The 18 photos in the strip start to scroll FAST (~45 ms between the first
+  // two) — on Android Chrome the browser hasn't finished decoding them when
+  // their `<img>` would normally paint, resulting in black flashes during the
+  // first half of the spin. We pre-create HTMLImageElements and `await
+  // .decode()` for each strip photo BEFORE starting the animation. No-op on
+  // native (RN Image caches its own bitmaps).
+  const decodeStripImages = useCallback(async (indices: number[]) => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+    try {
+      await Promise.all(
+        indices.map((idx) => {
+          return new Promise<void>((resolve) => {
+            try {
+              const asset = Asset.fromModule(PHOTOS[idx]);
+              const url = asset.uri || asset.localUri || "";
+              if (!url) {
+                resolve();
+                return;
+              }
+              const img = new window.Image();
+              const done = () => resolve();
+              img.onload = () => {
+                if (typeof (img as any).decode === "function") {
+                  (img as HTMLImageElement)
+                    .decode()
+                    .then(done)
+                    .catch(done);
+                } else {
+                  done();
+                }
+              };
+              img.onerror = done;
+              img.src = url;
+            } catch {
+              resolve();
+            }
+          });
+        })
+      );
+    } catch {}
   }, []);
 
   const triggerSpin = useCallback(() => {
@@ -511,28 +567,41 @@ export default function Index() {
     // Haptic at start
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
-    // Animate translateY from 0 to -(STRIP_ITEMS-1)*PHOTO_H with deceleration.
-    // The clicks_reel.wav already contains all 17 clicks at the exact
-    // instants computed from easeOutCubicInverse(k/(N-1)) * SPIN_DURATION
-    // * ACTIVE_RATIO — playing it as ONE file lets the iOS audio engine
-    // handle internal timing perfectly (no per-replay JS latency).
+    // Pre-decode the 18 strip photos on web BEFORE starting the animation
+    // (no-op on native). Then animate + play audio. The pre-decode wait
+    // (~50-150 ms) is invisible: it happens between the slider release and
+    // the visible strip movement.
     const target = -(STRIP_ITEMS - 1) * PHOTO_H;
-    requestAnimationFrame(() => {
-      translateY.value = withTiming(
-        target,
-        {
-          duration: SPIN_DURATION,
-          easing: Easing.out(Easing.cubic),
-        },
-        (finished) => {
-          if (finished) {
-            runOnJS(handleSpinEnd)(winner);
+    const start = () => {
+      requestAnimationFrame(() => {
+        translateY.value = withTiming(
+          target,
+          {
+            duration: SPIN_DURATION,
+            easing: Easing.out(Easing.cubic),
+          },
+          (finished) => {
+            if (finished) {
+              runOnJS(handleSpinEnd)(winner);
+            }
           }
-        }
-      );
-      playClicksReel();
-    });
-  }, [assetsReady, playClicksReel, spinning, translateY]);
+        );
+        playClicksReel();
+      });
+    };
+
+    if (Platform.OS === "web") {
+      decodeStripImages(newStrip).then(start);
+    } else {
+      start();
+    }
+  }, [
+    assetsReady,
+    decodeStripImages,
+    playClicksReel,
+    spinning,
+    translateY,
+  ]);
 
   const handleSpinEnd = useCallback(
     (winner: number) => {
