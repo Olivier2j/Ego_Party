@@ -267,10 +267,15 @@ const SliderLever = ({ onTrigger, resetSignal, disabled }: SliderProps) => {
 export default function Index() {
   const [fontsLoaded] = useFonts({ Bungee_400Regular });
   const [assetsReady, setAssetsReady] = useState(false);
-  const [currentIdx, setCurrentIdx] = useState<number>(() => cryptoRandomInt(PHOTO_COUNT));
+  // Initial photo + strip share the same first index so the always-mounted
+  // PhotoStrip at translateY=0 visually matches the "current" photo (no
+  // flash at first spin start when stripIndices is replaced).
+  const initialIdxRef = useRef<number>(cryptoRandomInt(PHOTO_COUNT));
+  const [currentIdx, setCurrentIdx] = useState<number>(initialIdxRef.current);
   const [stripIndices, setStripIndices] = useState<number[]>(() => {
     const arr: number[] = [];
-    for (let i = 0; i < STRIP_ITEMS; i++) arr.push(cryptoRandomInt(PHOTO_COUNT));
+    arr.push(initialIdxRef.current);
+    for (let i = 1; i < STRIP_ITEMS; i++) arr.push(cryptoRandomInt(PHOTO_COUNT));
     return arr;
   });
   const [spinning, setSpinning] = useState(false);
@@ -284,12 +289,14 @@ export default function Index() {
   const blinkTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // ===== Web-only Web Audio API for iOS Safari low-latency playback =====
-  // HTMLAudioElement.play() has 700-1200 ms of startup latency on iOS Safari
-  // even after the standard unlock pattern. Web Audio API's AudioBufferSource
-  // has <50 ms latency once the AudioContext is resumed inside a user gesture.
+  // Primary path = Web Audio API (low latency).
+  // Fallback path = HTMLAudioElement (high latency but more compatible).
+  // If decodeAudioData fails on Safari for any reason, HTMLAudio takes over.
   const webAudioCtxRef = useRef<AudioContext | null>(null);
   const webReelBufferRef = useRef<AudioBuffer | null>(null);
   const webDingBufferRef = useRef<AudioBuffer | null>(null);
+  const webReelElRef = useRef<HTMLAudioElement | null>(null);
+  const webDingElRef = useRef<HTMLAudioElement | null>(null);
   const webAudioUnlockedRef = useRef(false);
 
   const translateY = useSharedValue(0);
@@ -361,6 +368,19 @@ export default function Index() {
             reelAsset.downloadAsync().catch(() => {}),
             dingAsset.downloadAsync().catch(() => {}),
           ]);
+          // --- HTMLAudio fallback elements (always created) ---
+          try {
+            const reelEl = new window.Audio(reelAsset.uri);
+            reelEl.preload = "auto";
+            reelEl.volume = 0.85;
+            reelEl.load();
+            webReelElRef.current = reelEl;
+            const dingEl = new window.Audio(dingAsset.uri);
+            dingEl.preload = "auto";
+            dingEl.volume = 1.0;
+            dingEl.load();
+            webDingElRef.current = dingEl;
+          } catch {}
           const Ctx =
             (window as any).AudioContext ||
             (window as any).webkitAudioContext;
@@ -438,10 +458,10 @@ export default function Index() {
     };
   }, []);
 
-  // ===== Web playback via Web Audio API (low-latency) =====
+  // ===== Web playback: Web Audio API primary, HTMLAudio fallback =====
   const playBuffer = useCallback((buf: AudioBuffer | null, gainVal: number) => {
     const ctx = webAudioCtxRef.current;
-    if (!ctx || !buf) return;
+    if (!ctx || !buf) return false;
     try {
       const src = ctx.createBufferSource();
       src.buffer = buf;
@@ -449,51 +469,117 @@ export default function Index() {
       gain.gain.value = gainVal;
       src.connect(gain).connect(ctx.destination);
       src.start(0);
-    } catch {}
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const playHtmlAudio = useCallback((el: HTMLAudioElement | null) => {
+    if (!el) return false;
+    try {
+      el.pause();
+      el.currentTime = 0;
+      el.play().catch(() => {});
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
 
   const playClicksReel = useCallback(() => {
     if (Platform.OS === "web") {
-      playBuffer(webReelBufferRef.current, 0.85);
+      if (playBuffer(webReelBufferRef.current, 0.85)) return;
+      playHtmlAudio(webReelElRef.current);
       return;
     }
     const s = clicksReelRef.current;
     if (!s) return;
     s.replayAsync().catch(() => {});
-  }, [playBuffer]);
+  }, [playBuffer, playHtmlAudio]);
 
   const playDing = useCallback(() => {
     if (Platform.OS === "web") {
-      playBuffer(webDingBufferRef.current, 1.0);
+      if (playBuffer(webDingBufferRef.current, 1.0)) return;
+      playHtmlAudio(webDingElRef.current);
       return;
     }
     const s = dingSoundRef.current;
     if (!s) return;
     s.replayAsync().catch(() => {});
-  }, [playBuffer]);
+  }, [playBuffer, playHtmlAudio]);
 
   // iOS-Safari audio unlock: must be called inside a synchronous user-gesture
-  // handler. Resumes the AudioContext (suspended at creation under iOS rules)
-  // and primes the output by scheduling a silent zero-duration BufferSource.
+  // handler. Resumes the AudioContext AND warms up the HTMLAudio fallback.
   // No-op on native.
   const unlockWebAudio = useCallback(() => {
     if (Platform.OS !== "web") return;
     if (webAudioUnlockedRef.current) return;
-    const ctx = webAudioCtxRef.current;
-    if (!ctx) return;
     webAudioUnlockedRef.current = true;
-    try {
-      if (ctx.state === "suspended") {
-        ctx.resume().catch(() => {});
-      }
-      // Prime the audio pipeline with a 1-sample silent buffer.
-      const silent = ctx.createBuffer(1, 1, 22050);
-      const src = ctx.createBufferSource();
-      src.buffer = silent;
-      src.connect(ctx.destination);
-      src.start(0);
-    } catch {}
+    // ---- Web Audio API resume + prime ----
+    const ctx = webAudioCtxRef.current;
+    if (ctx) {
+      try {
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+        const silent = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = silent;
+        src.connect(ctx.destination);
+        src.start(0);
+      } catch {}
+    }
+    // ---- HTMLAudio fallback unlock (muted play+pause+rewind) ----
+    const warm = (el: HTMLAudioElement | null) => {
+      if (!el) return;
+      try {
+        const prevVol = el.volume;
+        el.muted = true;
+        const p = el.play();
+        const restore = () => {
+          try {
+            el.pause();
+            el.currentTime = 0;
+            el.muted = false;
+            el.volume = prevVol;
+          } catch {}
+        };
+        if (p && typeof (p as Promise<void>).then === "function") {
+          (p as Promise<void>).then(restore).catch(restore);
+        } else {
+          restore();
+        }
+      } catch {}
+    };
+    warm(webReelElRef.current);
+    warm(webDingElRef.current);
   }, []);
+
+  // Belt-and-suspenders: also attach a native DOM listener on document so
+  // the unlock fires for ANY first user gesture (even if RN-Web's
+  // onTouchStart wrapper somehow loses the user-gesture flag on Safari).
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    const fire = () => {
+      unlockWebAudio();
+      document.removeEventListener("touchstart", fire, true);
+      document.removeEventListener("touchend", fire, true);
+      document.removeEventListener("pointerdown", fire, true);
+      document.removeEventListener("mousedown", fire, true);
+      document.removeEventListener("click", fire, true);
+    };
+    document.addEventListener("touchstart", fire, { capture: true, passive: true });
+    document.addEventListener("touchend", fire, true);
+    document.addEventListener("pointerdown", fire, true);
+    document.addEventListener("mousedown", fire, true);
+    document.addEventListener("click", fire, true);
+    return () => {
+      document.removeEventListener("touchstart", fire, true);
+      document.removeEventListener("touchend", fire, true);
+      document.removeEventListener("pointerdown", fire, true);
+      document.removeEventListener("mousedown", fire, true);
+      document.removeEventListener("click", fire, true);
+    };
+  }, [unlockWebAudio]);
 
   // ===== Strip image pre-decoder (web only) =====
   // The 18 photos in the strip start to scroll FAST (~45 ms between the first
@@ -707,20 +793,15 @@ export default function Index() {
                 <View style={styles.photoFrame} testID="photo-frame">
                   <View style={styles.photoFrameInner}>
                     <View style={styles.photoMask}>
-                      {spinning ? (
-                        <PhotoStrip
-                          translateY={translateY}
-                          stripIndices={stripIndices}
-                        />
-                      ) : (
-                        <Image
-                          source={PHOTOS[currentIdx]}
-                          style={styles.stripImage}
-                          contentFit="cover"
-                          cachePolicy="memory-disk"
-                          testID="winner-photo"
-                        />
-                      )}
+                      {/* Always render the PhotoStrip — never swap with a
+                          static <Image>. When idle, translateY is 0 and
+                          stripIndices[0] is the current photo, so visually
+                          it's identical to a static image but there is no
+                          mount/unmount flash at spin start. */}
+                      <PhotoStrip
+                        translateY={translateY}
+                        stripIndices={stripIndices}
+                      />
                     </View>
                   </View>
                 </View>
