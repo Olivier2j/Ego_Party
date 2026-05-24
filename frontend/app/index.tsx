@@ -920,6 +920,12 @@ export default function Index() {
                         translateY={translateY}
                         stripIndices={stripIndices}
                       />
+                      {/* Black mask covering the photo until the user
+                          taps GO. Keeps the PhotoStrip mounted (no flash
+                          at first spin) while hiding the initial photo. */}
+                      {!hasStarted && (
+                        <View style={styles.photoBlackOverlay} pointerEvents="none" />
+                      )}
                       {/* Initial GO button overlay — shown until the user
                           first triggers a spin. A tap on this Pressable is
                           a canonical iOS WebKit user gesture, so the audio
@@ -1262,6 +1268,14 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   // ===== GO button (initial overlay on photo viewer) =====
+  photoBlackOverlay: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: COLORS.black,
+  },
   goButtonOverlay: {
     position: "absolute",
     // Centered circle inside the photo mask, sized to ~70% of the
