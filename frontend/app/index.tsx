@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Dimensions,
   Platform,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -266,6 +267,13 @@ const SliderLever = ({ onTrigger, resetSignal, disabled, onTouchUnlock }: Slider
     >
       <View style={styles.sliderTrack}>
         <Animated.View style={[styles.sliderFill, fillStyle]} />
+        {/* "SWAP →" label inside the track (NOT on the ball), behind the
+            red ball but above the fill. Shows the user the action and the
+            direction. pointerEvents=none so it doesn't intercept the swipe. */}
+        <View style={styles.sliderLabel} pointerEvents="none">
+          <Text style={styles.sliderLabelText}>SWAP</Text>
+          <Text style={styles.sliderLabelArrow}>→</Text>
+        </View>
         <GestureDetector gesture={pan}>
           <Animated.View style={[styles.ballOuter, ballStyle]} testID="slider-ball">
             <View style={styles.ballInner}>
@@ -297,6 +305,12 @@ export default function Index() {
   const [resetSignal, setResetSignal] = useState(0);
   const [bulbTick, setBulbTick] = useState(0);
   const [titleBlink, setTitleBlink] = useState(true);
+  // Becomes true after the very first spin. Until then, a big red "GO"
+  // button is shown over the photo viewer. This is intentional UX:
+  // the GO button is a synchronous user-gesture target, perfect for
+  // unlocking iOS WebKit audio. After the first spin, the GO button is
+  // never shown again — subsequent spins use the lever swipe.
+  const [hasStarted, setHasStarted] = useState(false);
 
   const lastIdxRef = useRef<number>(currentIdx);
   const clicksReelRef = useRef<Audio.Sound | null>(null);
@@ -728,6 +742,8 @@ export default function Index() {
     console.log("[AUDIO-DEBUG] startSpin called");
     if (spinning || !assetsReady) return;
     setSpinning(true);
+    // After first activation, hide the GO button forever (this session).
+    setHasStarted(true);
 
     // Belt-and-suspenders: if this is the very first user gesture (the
     // user swiped the lever before touching anywhere else), call the
@@ -864,7 +880,7 @@ export default function Index() {
           pointerEvents="none"
         >
           <Text style={{ color: "#0f0", fontSize: 10, fontFamily: "monospace" }}>
-            {`v7-await-resume `}
+            {`v8-go-button `}
             {`WA:${audioDbg.ctx ? "✓" : "✗"} `}
             {`BUF:${audioDbg.reelBuf ? "✓" : "✗"}${audioDbg.dingBuf ? "✓" : "✗"} `}
             {`EL:${audioDbg.reelEl ? "✓" : "✗"}${audioDbg.dingEl ? "✓" : "✗"} `}
@@ -934,6 +950,25 @@ export default function Index() {
                         translateY={translateY}
                         stripIndices={stripIndices}
                       />
+                      {/* Initial GO button overlay — shown until the user
+                          first triggers a spin. A tap on this Pressable is
+                          a canonical iOS WebKit user gesture, so the audio
+                          unlock + spin both ride a valid gesture token. */}
+                      {!hasStarted && (
+                        <Pressable
+                          onPress={() => {
+                            // Synchronous in user-gesture stack on web →
+                            // unlock + spin in same tick → iOS audio armed.
+                            unlockWebAudio();
+                            triggerSpin();
+                          }}
+                          style={styles.goButtonOverlay}
+                          testID="go-button"
+                        >
+                          <View style={styles.goButtonHighlight} />
+                          <Text style={styles.goButtonText}>GO</Text>
+                        </Pressable>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -1255,5 +1290,67 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginTop: 6,
     opacity: 0.85,
+  },
+  // ===== GO button (initial overlay on photo viewer) =====
+  goButtonOverlay: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.red,
+    borderWidth: 4,
+    borderColor: COLORS.bronze,
+    overflow: "hidden",
+    // Inner shadow look matching the red ball
+    shadowColor: "#000",
+    shadowOpacity: 0.6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  goButtonHighlight: {
+    position: "absolute",
+    top: "8%",
+    width: "55%",
+    height: "22%",
+    backgroundColor: "rgba(255,255,255,0.35)",
+    borderRadius: 999,
+  },
+  goButtonText: {
+    color: "#fff",
+    fontSize: 64,
+    fontWeight: "900",
+    letterSpacing: 6,
+    textShadowColor: "rgba(0,0,0,0.7)",
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 4,
+  },
+  // ===== "SWAP →" label inside slider track =====
+  sliderLabel: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  sliderLabelText: {
+    color: COLORS.bronze,
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: 4,
+    opacity: 0.85,
+  },
+  sliderLabelArrow: {
+    color: COLORS.bronzeLight,
+    fontSize: 20,
+    fontWeight: "900",
+    opacity: 0.9,
   },
 });
