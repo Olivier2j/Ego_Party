@@ -267,12 +267,11 @@ const SliderLever = ({ onTrigger, resetSignal, disabled, onTouchUnlock }: Slider
     >
       <View style={styles.sliderTrack}>
         <Animated.View style={[styles.sliderFill, fillStyle]} />
-        {/* "SWAP →" label inside the track (NOT on the ball), behind the
-            red ball but above the fill. Shows the user the action and the
-            direction. pointerEvents=none so it doesn't intercept the swipe. */}
+        {/* "→" arrow inside the track (NOT on the ball), behind the
+            red ball but above the fill. Shows the swipe direction.
+            pointerEvents=none so it doesn't intercept the swipe. */}
         <View style={styles.sliderLabel} pointerEvents="none">
-          <Text style={styles.sliderLabelText}>SWAP</Text>
-          <Text style={styles.sliderLabelArrow}>→</Text>
+          <Text style={styles.sliderLabelArrow}>⟶</Text>
         </View>
         <GestureDetector gesture={pan}>
           <Animated.View style={[styles.ballOuter, ballStyle]} testID="slider-ball">
@@ -1294,17 +1293,21 @@ const styles = StyleSheet.create({
   // ===== GO button (initial overlay on photo viewer) =====
   goButtonOverlay: {
     position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
+    // Centered circle inside the photo mask, sized to ~70% of the
+    // smaller dimension so it sits nicely in the middle without
+    // touching the bronze frame. Same red+bronze treatment as the
+    // slider ball so the visual language stays consistent.
+    left: (PHOTO_W - PHOTO_W * 0.7) / 2,
+    top: (PHOTO_H - PHOTO_W * 0.7) / 2,
+    width: PHOTO_W * 0.7,
+    height: PHOTO_W * 0.7,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: COLORS.red,
     borderWidth: 4,
     borderColor: COLORS.bronze,
     overflow: "hidden",
-    // Inner shadow look matching the red ball
     shadowColor: "#000",
     shadowOpacity: 0.6,
     shadowOffset: { width: 0, height: 4 },
@@ -1313,22 +1316,22 @@ const styles = StyleSheet.create({
   },
   goButtonHighlight: {
     position: "absolute",
-    top: "8%",
+    top: "10%",
     width: "55%",
-    height: "22%",
-    backgroundColor: "rgba(255,255,255,0.35)",
+    height: "20%",
+    backgroundColor: "rgba(255,255,255,0.45)",
     borderRadius: 999,
   },
   goButtonText: {
     color: "#fff",
-    fontSize: 64,
+    fontSize: 56,
     fontWeight: "900",
-    letterSpacing: 6,
+    letterSpacing: 4,
     textShadowColor: "rgba(0,0,0,0.7)",
     textShadowOffset: { width: 0, height: 3 },
     textShadowRadius: 4,
   },
-  // ===== "SWAP →" label inside slider track =====
+  // ===== Thin long arrow inside slider track =====
   sliderLabel: {
     position: "absolute",
     left: 0,
@@ -1338,19 +1341,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-  },
-  sliderLabelText: {
-    color: COLORS.bronze,
-    fontSize: 14,
-    fontWeight: "800",
-    letterSpacing: 4,
-    opacity: 0.85,
   },
   sliderLabelArrow: {
     color: COLORS.bronzeLight,
-    fontSize: 20,
-    fontWeight: "900",
+    fontSize: 26,
+    fontWeight: "300",
+    letterSpacing: 0,
     opacity: 0.9,
+    // Nudge up a hair for optical centering of the arrow glyph
+    lineHeight: 28,
   },
 });
