@@ -267,12 +267,6 @@ const SliderLever = ({ onTrigger, resetSignal, disabled, onTouchUnlock }: Slider
     >
       <View style={styles.sliderTrack}>
         <Animated.View style={[styles.sliderFill, fillStyle]} />
-        {/* "→" arrow inside the track (NOT on the ball), behind the
-            red ball but above the fill. Shows the swipe direction.
-            pointerEvents=none so it doesn't intercept the swipe. */}
-        <View style={styles.sliderLabel} pointerEvents="none">
-          <Text style={styles.sliderLabelArrow}>⟶</Text>
-        </View>
         <GestureDetector gesture={pan}>
           <Animated.View style={[styles.ballOuter, ballStyle]} testID="slider-ball">
             <View style={styles.ballInner}>
@@ -865,29 +859,6 @@ export default function Index() {
       // RN prop and just gets ignored if we don't use the responder system).
       onTouchStart={unlockWebAudio}
     >
-      {Platform.OS === "web" && (
-        <View
-          style={{
-            position: "absolute",
-            top: 4,
-            left: 4,
-            right: 4,
-            zIndex: 999,
-            backgroundColor: "rgba(0,0,0,0.7)",
-            padding: 4,
-          }}
-          pointerEvents="none"
-        >
-          <Text style={{ color: "#0f0", fontSize: 10, fontFamily: "monospace" }}>
-            {`v8-go-button `}
-            {`WA:${audioDbg.ctx ? "✓" : "✗"} `}
-            {`BUF:${audioDbg.reelBuf ? "✓" : "✗"}${audioDbg.dingBuf ? "✓" : "✗"} `}
-            {`EL:${audioDbg.reelEl ? "✓" : "✗"}${audioDbg.dingEl ? "✓" : "✗"} `}
-            {`UNLK:${audioDbg.unlocked ? "✓" : "✗"} `}
-            {`PATH:${audioDbg.lastPath} N:${audioDbg.plays}`}
-          </Text>
-        </View>
-      )}
       <View style={styles.machineWrap}>
         {/* Outer bronze double frame with bulbs */}
         <View style={styles.machineOuter}>
