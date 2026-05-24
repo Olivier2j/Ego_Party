@@ -337,6 +337,7 @@ export default function Index() {
 
   // Pre-load assets + sounds (non-blocking, robust on web/native)
   useEffect(() => {
+    console.log("[AUDIO-DEBUG] === BUNDLE VERSION v7-await-resume LOADED ===");
     let cancelled = false;
     let timedOut = false;
 
@@ -863,6 +864,7 @@ export default function Index() {
           pointerEvents="none"
         >
           <Text style={{ color: "#0f0", fontSize: 10, fontFamily: "monospace" }}>
+            {`v7-await-resume `}
             {`WA:${audioDbg.ctx ? "✓" : "✗"} `}
             {`BUF:${audioDbg.reelBuf ? "✓" : "✗"}${audioDbg.dingBuf ? "✓" : "✗"} `}
             {`EL:${audioDbg.reelEl ? "✓" : "✗"}${audioDbg.dingEl ? "✓" : "✗"} `}
