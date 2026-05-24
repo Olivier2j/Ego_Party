@@ -416,15 +416,70 @@ export default function Index() {
   }, []);
 
   const playClicksReel = useCallback(() => {
+    if (Platform.OS === "web") {
+      const el = webReelRef.current;
+      if (el) {
+        try {
+          el.pause();
+          el.currentTime = 0;
+          el.play().catch(() => {});
+        } catch {}
+        return;
+      }
+    }
     const s = clicksReelRef.current;
     if (!s) return;
     s.replayAsync().catch(() => {});
   }, []);
 
   const playDing = useCallback(() => {
+    if (Platform.OS === "web") {
+      const el = webDingRef.current;
+      if (el) {
+        try {
+          el.pause();
+          el.currentTime = 0;
+          el.play().catch(() => {});
+        } catch {}
+        return;
+      }
+    }
     const s = dingSoundRef.current;
     if (!s) return;
     s.replayAsync().catch(() => {});
+  }, []);
+
+  // iOS-Safari audio unlock: run inside a synchronous user-gesture handler
+  // (onTouchStart on the root view). Plays each clip MUTED then pauses and
+  // rewinds, which permanently authorizes WebKit to play them programmatically
+  // later in the same session. No-op on native.
+  const unlockWebAudio = useCallback(() => {
+    if (Platform.OS !== "web") return;
+    if (webAudioUnlockedRef.current) return;
+    webAudioUnlockedRef.current = true;
+    const unlock = (el: HTMLAudioElement | null) => {
+      if (!el) return;
+      try {
+        const prevVol = el.volume;
+        el.muted = true;
+        const p = el.play();
+        const restore = () => {
+          try {
+            el.pause();
+            el.currentTime = 0;
+            el.muted = false;
+            el.volume = prevVol;
+          } catch {}
+        };
+        if (p && typeof (p as Promise<void>).then === "function") {
+          (p as Promise<void>).then(restore).catch(restore);
+        } else {
+          restore();
+        }
+      } catch {}
+    };
+    unlock(webReelRef.current);
+    unlock(webDingRef.current);
   }, []);
 
   const triggerSpin = useCallback(() => {
