@@ -259,7 +259,10 @@ const SliderLever = ({ onTrigger, resetSignal, disabled, onTouchUnlock }: Slider
       // gesture token. Calling unlockWebAudio() here arms the audio
       // hardware in the gesture lineage so the later src.start(0) is
       // routed to the speaker.
-      onTouchStart={onTouchUnlock}
+      onTouchStart={(e) => {
+        console.log("[AUDIO-DEBUG] onTouchStart fired, web =", Platform.OS === "web");
+        if (onTouchUnlock) onTouchUnlock();
+      }}
     >
       <View style={styles.sliderTrack}>
         <Animated.View style={[styles.sliderFill, fillStyle]} />
@@ -497,6 +500,7 @@ export default function Index() {
       gain.gain.value = gainVal;
       src.connect(gain).connect(ctx.destination);
       src.start(0);
+      console.log("[AUDIO-DEBUG] src.start called");
       return true;
     } catch {
       return false;
@@ -516,6 +520,7 @@ export default function Index() {
   }, []);
 
   const playClicksReel = useCallback(() => {
+    console.log("[AUDIO-DEBUG] playClicksReel, ctx =", !!webAudioCtxRef.current, "buf =", !!webReelBufferRef.current, "state =", webAudioCtxRef.current?.state);
     if (Platform.OS === "web") {
       if (playBuffer(webReelBufferRef.current, 0.85)) {
         setAudioDbg((d) => ({ ...d, lastPath: "WA", plays: d.plays + 1 }));
@@ -549,6 +554,7 @@ export default function Index() {
   // iOS WebKit (Safari and Chrome iOS, both use WebKit) actually activates
   // the audio hardware. Decoding the cached ArrayBuffers also happens here.
   const unlockWebAudio = useCallback(() => {
+    console.log("[AUDIO-DEBUG] unlockWebAudio CALLED, alreadyUnlocked =", webAudioUnlockedRef.current);
     if (Platform.OS !== "web") return;
     if (webAudioUnlockedRef.current) return;
     webAudioUnlockedRef.current = true;
@@ -562,6 +568,7 @@ export default function Index() {
         ctx = new Ctx();
         webAudioCtxRef.current = ctx;
         ctxCreated = true;
+        console.log("[AUDIO-DEBUG] ctx created, state =", ctx.state);
         // iOS WebKit refuses to consider a 1-sample silent buffer as a
         // "real" play — the audio hardware stays unarmed. Instead, fire
         // a real (but inaudible) 50ms 20Hz oscillator. Gain 0.0001 keeps
@@ -603,6 +610,7 @@ export default function Index() {
         decode(reelArrBufRef.current),
         decode(dingArrBufRef.current),
       ]).then(([r, d]) => {
+        console.log("[AUDIO-DEBUG] buffers decoded OK", { reel: !!r, ding: !!d });
         webReelBufferRef.current = r;
         webDingBufferRef.current = d;
         setAudioDbg((s) => ({
@@ -612,7 +620,7 @@ export default function Index() {
           dingBuf: !!d,
         }));
       }).catch((e) => {
-        console.error("[EgoParty] DECODE FAIL", e);
+        console.log("[AUDIO-DEBUG] DECODE FAIL", e);
       });
     }
     // ---- HTMLAudio fallback unlock (muted play+pause+rewind) ----
@@ -706,6 +714,7 @@ export default function Index() {
   }, []);
 
   const triggerSpin = useCallback(() => {
+    console.log("[AUDIO-DEBUG] startSpin called");
     if (spinning || !assetsReady) return;
     setSpinning(true);
 
