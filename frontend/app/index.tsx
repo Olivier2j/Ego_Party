@@ -484,23 +484,30 @@ export default function Index() {
   }, []);
 
   // ===== Web playback: Web Audio API primary, HTMLAudio fallback =====
-  const playBuffer = useCallback((buf: AudioBuffer | null, gainVal: number) => {
+  // CRITICAL: this MUST be async because ctx.resume() returns a Promise
+  // that we have to AWAIT on iOS WebKit. If we fire src.start(0) before
+  // the resume settles, ctx.state is still "suspended" at hardware level
+  // and the sample is dropped silently (this is the bug we just observed
+  // in the [AUDIO-DEBUG] trace on direct-swipe).
+  const playBuffer = useCallback(async (buf: AudioBuffer | null, gainVal: number) => {
     const ctx = webAudioCtxRef.current;
     if (!ctx || !buf) return false;
     try {
-      // iOS WebKit sometimes re-suspends the context between gestures.
-      // Force-resume right before each play so src.start(0) actually
-      // routes to the hardware.
       if (ctx.state === "suspended") {
-        ctx.resume().catch(() => {});
+        try {
+          await ctx.resume();
+        } catch (e) {
+          console.log("[AUDIO-DEBUG] resume fail", e);
+        }
       }
+      console.log("[AUDIO-DEBUG] playBuffer after resume, state =", ctx.state);
       const src = ctx.createBufferSource();
       src.buffer = buf;
       const gain = ctx.createGain();
       gain.gain.value = gainVal;
       src.connect(gain).connect(ctx.destination);
       src.start(0);
-      console.log("[AUDIO-DEBUG] src.start called");
+      console.log("[AUDIO-DEBUG] src.start called, state =", ctx.state);
       return true;
     } catch {
       return false;
@@ -519,10 +526,13 @@ export default function Index() {
     }
   }, []);
 
-  const playClicksReel = useCallback(() => {
+  // Async because playBuffer awaits ctx.resume() on iOS WebKit. Callers
+  // (startSpin / handleSpinEnd) treat this as fire-and-forget — the
+  // visual animation does NOT wait for the audio promise to settle.
+  const playClicksReel = useCallback(async () => {
     console.log("[AUDIO-DEBUG] playClicksReel, ctx =", !!webAudioCtxRef.current, "buf =", !!webReelBufferRef.current, "state =", webAudioCtxRef.current?.state);
     if (Platform.OS === "web") {
-      if (playBuffer(webReelBufferRef.current, 0.85)) {
+      if (await playBuffer(webReelBufferRef.current, 0.85)) {
         setAudioDbg((d) => ({ ...d, lastPath: "WA", plays: d.plays + 1 }));
         return;
       }
@@ -538,9 +548,9 @@ export default function Index() {
     s.replayAsync().catch(() => {});
   }, [playBuffer, playHtmlAudio]);
 
-  const playDing = useCallback(() => {
+  const playDing = useCallback(async () => {
     if (Platform.OS === "web") {
-      if (playBuffer(webDingBufferRef.current, 1.0)) return;
+      if (await playBuffer(webDingBufferRef.current, 1.0)) return;
       playHtmlAudio(webDingElRef.current);
       return;
     }
