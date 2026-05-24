@@ -189,7 +189,7 @@ const PhotoStrip = React.memo(({ translateY, stripIndices }: PhotoStripProps) =>
   return (
     <Animated.View style={[styles.strip, animatedStyle]}>
       {stripIndices.map((idx, i) => (
-        <View key={`${i}-${idx}`} style={styles.stripItem}>
+        <View key={i} style={styles.stripItem}>
           <Image
             source={PHOTOS[idx]}
             style={styles.stripImage}
@@ -301,6 +301,20 @@ export default function Index() {
 
   const translateY = useSharedValue(0);
 
+  // Visible debug indicator (web only) so we can pinpoint iOS Safari audio
+  // failure points. WA=AudioContext, BUF=decoded buffers, EL=HTMLAudio elements,
+  // UNLK=unlock fired, PATH=last play path, N=play count.
+  const [audioDbg, setAudioDbg] = useState({
+    ctx: false,
+    reelBuf: false,
+    dingBuf: false,
+    reelEl: false,
+    dingEl: false,
+    unlocked: false,
+    lastPath: "—",
+    plays: 0,
+  });
+
   // Pre-load assets + sounds (non-blocking, robust on web/native)
   useEffect(() => {
     let cancelled = false;
@@ -369,18 +383,23 @@ export default function Index() {
             dingAsset.downloadAsync().catch(() => {}),
           ]);
           // --- HTMLAudio fallback elements (always created) ---
+          let elReel = false;
+          let elDing = false;
           try {
             const reelEl = new window.Audio(reelAsset.uri);
             reelEl.preload = "auto";
             reelEl.volume = 0.85;
             reelEl.load();
             webReelElRef.current = reelEl;
+            elReel = true;
             const dingEl = new window.Audio(dingAsset.uri);
             dingEl.preload = "auto";
             dingEl.volume = 1.0;
             dingEl.load();
             webDingElRef.current = dingEl;
+            elDing = true;
           } catch {}
+          setAudioDbg((d) => ({ ...d, reelEl: elReel, dingEl: elDing }));
           const Ctx =
             (window as any).AudioContext ||
             (window as any).webkitAudioContext;
@@ -413,6 +432,12 @@ export default function Index() {
             webAudioCtxRef.current = ctx;
             webReelBufferRef.current = reelBuf;
             webDingBufferRef.current = dingBuf;
+            setAudioDbg((d) => ({
+              ...d,
+              ctx: true,
+              reelBuf: !!reelBuf,
+              dingBuf: !!dingBuf,
+            }));
           }
         } catch {}
       }
@@ -489,8 +514,15 @@ export default function Index() {
 
   const playClicksReel = useCallback(() => {
     if (Platform.OS === "web") {
-      if (playBuffer(webReelBufferRef.current, 0.85)) return;
-      playHtmlAudio(webReelElRef.current);
+      if (playBuffer(webReelBufferRef.current, 0.85)) {
+        setAudioDbg((d) => ({ ...d, lastPath: "WA", plays: d.plays + 1 }));
+        return;
+      }
+      if (playHtmlAudio(webReelElRef.current)) {
+        setAudioDbg((d) => ({ ...d, lastPath: "HA", plays: d.plays + 1 }));
+        return;
+      }
+      setAudioDbg((d) => ({ ...d, lastPath: "NONE", plays: d.plays + 1 }));
       return;
     }
     const s = clicksReelRef.current;
@@ -552,6 +584,7 @@ export default function Index() {
     };
     warm(webReelElRef.current);
     warm(webDingElRef.current);
+    setAudioDbg((d) => ({ ...d, unlocked: true }));
   }, []);
 
   // Belt-and-suspenders: also attach a native DOM listener on document so
@@ -741,6 +774,28 @@ export default function Index() {
       // RN prop and just gets ignored if we don't use the responder system).
       onTouchStart={unlockWebAudio}
     >
+      {Platform.OS === "web" && (
+        <View
+          style={{
+            position: "absolute",
+            top: 4,
+            left: 4,
+            right: 4,
+            zIndex: 999,
+            backgroundColor: "rgba(0,0,0,0.7)",
+            padding: 4,
+          }}
+          pointerEvents="none"
+        >
+          <Text style={{ color: "#0f0", fontSize: 10, fontFamily: "monospace" }}>
+            {`WA:${audioDbg.ctx ? "✓" : "✗"} `}
+            {`BUF:${audioDbg.reelBuf ? "✓" : "✗"}${audioDbg.dingBuf ? "✓" : "✗"} `}
+            {`EL:${audioDbg.reelEl ? "✓" : "✗"}${audioDbg.dingEl ? "✓" : "✗"} `}
+            {`UNLK:${audioDbg.unlocked ? "✓" : "✗"} `}
+            {`PATH:${audioDbg.lastPath} N:${audioDbg.plays}`}
+          </Text>
+        </View>
+      )}
       <View style={styles.machineWrap}>
         {/* Outer bronze double frame with bulbs */}
         <View style={styles.machineOuter}>
