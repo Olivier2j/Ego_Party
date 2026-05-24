@@ -298,6 +298,11 @@ export default function Index() {
   const webReelElRef = useRef<HTMLAudioElement | null>(null);
   const webDingElRef = useRef<HTMLAudioElement | null>(null);
   const webAudioUnlockedRef = useRef(false);
+  // Raw ArrayBuffers cached at load — decoded only inside the FIRST user
+  // gesture (iOS Safari requirement: AudioContext born outside a gesture
+  // remains silent even after .resume()).
+  const reelArrBufRef = useRef<ArrayBuffer | null>(null);
+  const dingArrBufRef = useRef<ArrayBuffer | null>(null);
 
   const translateY = useSharedValue(0);
 
@@ -400,45 +405,25 @@ export default function Index() {
             elDing = true;
           } catch {}
           setAudioDbg((d) => ({ ...d, reelEl: elReel, dingEl: elDing }));
-          const Ctx =
-            (window as any).AudioContext ||
-            (window as any).webkitAudioContext;
-          if (Ctx) {
-            const ctx: AudioContext = new Ctx();
-            const fetchBuf = async (uri: string) => {
-              const arr = await fetch(uri).then((r) => r.arrayBuffer());
-              return await new Promise<AudioBuffer>((resolve, reject) => {
-                // Both callback and Promise forms — Safari supports the
-                // callback form on all versions; modern browsers return a
-                // Promise from decodeAudioData.
-                try {
-                  const p = ctx.decodeAudioData(
-                    arr,
-                    (buf) => resolve(buf),
-                    (err) => reject(err)
-                  );
-                  if (p && typeof (p as Promise<AudioBuffer>).then === "function") {
-                    (p as Promise<AudioBuffer>).then(resolve, reject);
-                  }
-                } catch (e) {
-                  reject(e);
-                }
-              });
-            };
-            const [reelBuf, dingBuf] = await Promise.all([
-              fetchBuf(reelAsset.uri).catch(() => null),
-              fetchBuf(dingAsset.uri).catch(() => null),
+          // CRITICAL iOS Safari/WebKit constraint:
+          // We do NOT create the AudioContext here. iOS WebKit only activates
+          // the audio hardware when the AudioContext is *constructed* inside
+          // a user gesture handler. Even resume() on a pre-built ctx stays
+          // silent. So we only PREFETCH the raw ArrayBuffers here, then the
+          // context + decode happen lazily inside unlockWebAudio() on the
+          // first touch.
+          try {
+            const [reelArr, dingArr] = await Promise.all([
+              fetch(reelAsset.uri)
+                .then((r) => r.arrayBuffer())
+                .catch(() => null),
+              fetch(dingAsset.uri)
+                .then((r) => r.arrayBuffer())
+                .catch(() => null),
             ]);
-            webAudioCtxRef.current = ctx;
-            webReelBufferRef.current = reelBuf;
-            webDingBufferRef.current = dingBuf;
-            setAudioDbg((d) => ({
-              ...d,
-              ctx: true,
-              reelBuf: !!reelBuf,
-              dingBuf: !!dingBuf,
-            }));
-          }
+            reelArrBufRef.current = reelArr;
+            dingArrBufRef.current = dingArr;
+          } catch {}
         } catch {}
       }
 
@@ -541,24 +526,68 @@ export default function Index() {
     s.replayAsync().catch(() => {});
   }, [playBuffer, playHtmlAudio]);
 
-  // iOS-Safari audio unlock: must be called inside a synchronous user-gesture
-  // handler. Resumes the AudioContext AND warms up the HTMLAudio fallback.
-  // No-op on native.
+  // iOS-Safari audio unlock + LAZY AudioContext creation. MUST run inside a
+  // synchronous user-gesture handler — the AudioContext is born here so that
+  // iOS WebKit (Safari and Chrome iOS, both use WebKit) actually activates
+  // the audio hardware. Decoding the cached ArrayBuffers also happens here.
   const unlockWebAudio = useCallback(() => {
     if (Platform.OS !== "web") return;
     if (webAudioUnlockedRef.current) return;
     webAudioUnlockedRef.current = true;
-    // ---- Web Audio API resume + prime ----
-    const ctx = webAudioCtxRef.current;
-    if (ctx) {
+    // ---- Create AudioContext NOW (in user gesture) ----
+    const Ctx =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    let ctxCreated = false;
+    let ctx: AudioContext | null = null;
+    if (Ctx) {
       try {
-        if (ctx.state === "suspended") ctx.resume().catch(() => {});
-        const silent = ctx.createBuffer(1, 1, 22050);
-        const src = ctx.createBufferSource();
-        src.buffer = silent;
-        src.connect(ctx.destination);
-        src.start(0);
+        ctx = new Ctx();
+        webAudioCtxRef.current = ctx;
+        ctxCreated = true;
+        // Prime silent buffer to fully wake the iOS audio session
+        const silent = ctx!.createBuffer(1, 1, 22050);
+        const silentSrc = ctx!.createBufferSource();
+        silentSrc.buffer = silent;
+        silentSrc.connect(ctx!.destination);
+        silentSrc.start(0);
+        if (ctx!.state === "suspended") {
+          ctx!.resume().catch(() => {});
+        }
       } catch {}
+    }
+    // ---- Decode the cached ArrayBuffers (async, but the context is now alive) ----
+    if (ctx && reelArrBufRef.current && dingArrBufRef.current) {
+      const decode = (buf: ArrayBuffer) =>
+        new Promise<AudioBuffer | null>((resolve) => {
+          try {
+            const p = ctx!.decodeAudioData(
+              buf.slice(0),
+              (b) => resolve(b),
+              () => resolve(null)
+            );
+            if (p && typeof (p as Promise<AudioBuffer>).then === "function") {
+              (p as Promise<AudioBuffer>).then(
+                (b) => resolve(b),
+                () => resolve(null)
+              );
+            }
+          } catch {
+            resolve(null);
+          }
+        });
+      Promise.all([
+        decode(reelArrBufRef.current),
+        decode(dingArrBufRef.current),
+      ]).then(([r, d]) => {
+        webReelBufferRef.current = r;
+        webDingBufferRef.current = d;
+        setAudioDbg((s) => ({
+          ...s,
+          ctx: ctxCreated,
+          reelBuf: !!r,
+          dingBuf: !!d,
+        }));
+      });
     }
     // ---- HTMLAudio fallback unlock (muted play+pause+rewind) ----
     const warm = (el: HTMLAudioElement | null) => {
@@ -584,7 +613,7 @@ export default function Index() {
     };
     warm(webReelElRef.current);
     warm(webDingElRef.current);
-    setAudioDbg((d) => ({ ...d, unlocked: true }));
+    setAudioDbg((d) => ({ ...d, ctx: ctxCreated, unlocked: true }));
   }, []);
 
   // Belt-and-suspenders: also attach a native DOM listener on document so
