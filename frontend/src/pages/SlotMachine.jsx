@@ -240,13 +240,13 @@ export default function SlotMachine() {
               {/* Gold Top Plate */}
               <div className="h-6 rounded-t-xl mb-4 border-b-2" style={{ background: 'linear-gradient(180deg, hsl(35 48% 55%) 0%, hsl(35 48% 45%) 100%)', borderColor: 'hsl(35 40% 35%)' }} />
 
-              {/* Slot Window - with gold border, machine-body background (no dark frame) */}
-              <div className="relative rounded-xl p-1 shadow-inner-slot border-4" style={{ background: 'linear-gradient(180deg, hsl(150 30% 22%) 0%, hsl(150 35% 16%) 100%)', borderColor: 'hsl(35 48% 40%)' }}>
+              {/* Slot Window - gold border only, no dark frame between photo and gold */}
+              <div className="relative rounded-xl shadow-inner-slot border-4" style={{ borderColor: 'hsl(35 48% 40%)' }}>
                 {/* Glass Reflection */}
                 <div className="absolute inset-0 slot-glass rounded-xl pointer-events-none z-10" />
                 
-                {/* Polaroid Reel - Square format */}
-                <div className="relative overflow-hidden rounded-lg flex items-center justify-center" style={{ width: '280px', height: '280px' }}>
+                {/* Polaroid Reel - Square format, sized to fit the photo exactly */}
+                <div className="relative overflow-hidden rounded-lg flex items-center justify-center" style={{ width: '250px', height: '250px' }}>
                   {photos.length > 0 ? (
                     <SlotReel
                       photos={photos}
