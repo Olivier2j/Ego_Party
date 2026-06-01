@@ -181,11 +181,10 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
                   alt=""
                   decoding="async"
                   style={{
-                    width: '102%',
-                    height: '102%',
+                    width: '100%',
+                    height: '100%',
+                    maxWidth: 'none',
                     objectFit: 'cover',
-                    marginLeft: '-1%',
-                    marginTop: '-1%',
                     display: 'block',
                   }}
                 />
@@ -198,11 +197,10 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
             alt=""
             decoding="async"
             style={{
-              width: '102%',
-              height: '102%',
+              width: '100%',
+              height: '100%',
+              maxWidth: 'none',
               objectFit: 'cover',
-              marginLeft: '-1%',
-              marginTop: '-1%',
               display: 'block',
             }}
           />
