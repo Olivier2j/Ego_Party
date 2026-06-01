@@ -341,13 +341,6 @@ export default function SlotMachine() {
           <CasinoBulbs position="right" count={7} isSpinning={isSpinning} />
         </div>
       </div>
-
-      {/* Photo Count */}
-      <div className="mt-6 text-center">
-        <p className="text-muted-foreground font-display text-lg">
-          {photos.length} PHOTO{photos.length !== 1 ? 'S' : ''} DANS LA MACHINE
-        </p>
-      </div>
     </div>
   );
 }

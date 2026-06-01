@@ -154,11 +154,9 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
 
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-      {/* Viewport: 250x250, no black border */}
+      {/* Viewport: 250x250, no black border, no scale change between spinning/idle */}
       <div
-        className={`relative rounded-sm shadow-xl overflow-hidden transform transition-transform duration-300 ${
-          spinning ? 'scale-95' : 'scale-100'
-        }`}
+        className="relative rounded-sm shadow-xl overflow-hidden"
         style={{ width: '250px', height: `${SLOT_HEIGHT}px` }}
       >
         {spinning ? (
@@ -210,16 +208,6 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
           />
         )}
       </div>
-
-      {/* Top/bottom gradient overlays (visible during spin for depth) */}
-      <div
-        className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none z-10 transition-opacity duration-300"
-        style={{ opacity: spinning ? 1 : 0 }}
-      />
-      <div
-        className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/70 to-transparent pointer-events-none z-10 transition-opacity duration-300"
-        style={{ opacity: spinning ? 1 : 0 }}
-      />
     </div>
   );
 }
