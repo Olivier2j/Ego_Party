@@ -27,8 +27,7 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
   const [strip, setStrip] = useState([]);
 
   const reelRef = useRef(null);
-  const animationRef = useRef(null);
-  const clickTimeoutsRef = useRef([]);
+  const rafRef = useRef(null);
   const finalIndexRef = useRef(0);
 
   // Pick a new random photo whenever the photo set is (re)loaded and we're idle
@@ -42,12 +41,10 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
   useEffect(() => {
     if (!isSpinning || photos.length === 0) {
       // Cleanup if we were spinning
-      if (animationRef.current) {
-        try { animationRef.current.cancel(); } catch { /* ignore */ }
-        animationRef.current = null;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
-      clickTimeoutsRef.current.forEach(clearTimeout);
-      clickTimeoutsRef.current = [];
       return;
     }
 
@@ -64,65 +61,84 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
     newStrip[STRIP_LEN - 1] = photos[finalIdx];
     setStrip(newStrip);
 
-    // Wait for the strip to be in the DOM, then animate
-    const rafId = requestAnimationFrame(() => {
+    // Wait for the strip to be in the DOM, then start the rAF-driven animation.
+    // We drive transform AND click sounds from the SAME loop so they can never
+    // drift apart. The click for photo i fires the very frame the strip crosses
+    // -i * SLOT_HEIGHT — i.e. when photo i becomes the centered one.
+    const initialRaf = requestAnimationFrame(() => {
       const reel = reelRef.current;
       if (!reel) return;
 
-      const endY = -(STRIP_LEN - 1) * SLOT_HEIGHT;
-      const peakY = endY - OVERSHOOT_PX; // strip position at the 92% overshoot peak
+      const endY = -(STRIP_LEN - 1) * SLOT_HEIGHT;     // -4250 (final settle)
+      const peakY = endY - OVERSHOOT_PX;               // -4264 (overshoot peak at 92%)
+      const easeOutPhase = SPIN_DURATION * 0.92;       // 0 → 92%: ease-out cubic
+      const settlePhase = SPIN_DURATION - easeOutPhase; // 92 → 100%: gentle settle
 
-      const keyframes = [
-        { transform: 'translate3d(0, 0, 0)', offset: 0 },
-        // Pure ease-out cubic to just past the target (overshoot).
-        // Using the canonical ease-out cubic curve so the inverse formula
-        // (t = 1 - (1-y)^(1/3)) below is mathematically exact.
-        { transform: `translate3d(0, ${peakY}px, 0)`, offset: 0.92,
-          easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)' },
-        // Gentle settle back onto the target (bounce back)
-        { transform: `translate3d(0, ${endY}px, 0)`, offset: 1,
-          easing: 'cubic-bezier(0.34, 0, 0.64, 1)' },
-      ];
+      const startTime = performance.now();
+      let nextTickIdx = 1; // next photo boundary to "click" on (1..STRIP_LEN-1)
 
-      const anim = reel.animate(keyframes, {
-        duration: SPIN_DURATION,
-        fill: 'forwards',
-      });
-      animationRef.current = anim;
+      const tick = (now) => {
+        const elapsed = now - startTime;
+        let scroll;
 
-      // Schedule click sounds — one per photo arriving at the viewport center.
-      // Photo at position i is centered when scroll = -i * SLOT_HEIGHT.
-      // The animation reaches peakY (= endY - OVERSHOOT_PX) at 92% of duration
-      // following an ease-out cubic. So the fractional progress of the curve
-      // when photo i arrives at center is y_i = (i * SLOT_HEIGHT) / |peakY|.
-      // Inverse of ease-out cubic: t = 1 - (1 - y)^(1/3)
-      const peakDistance = Math.abs(peakY);
-      for (let i = 1; i < STRIP_LEN; i++) {
-        const y = (i * SLOT_HEIGHT) / peakDistance;
-        const t = 1 - Math.pow(1 - y, 1 / 3);
-        const time = t * SPIN_DURATION * 0.92;
-        const tid = setTimeout(() => { if (onPhotoChange) onPhotoChange(); }, time);
-        clickTimeoutsRef.current.push(tid);
-      }
+        if (elapsed >= SPIN_DURATION) {
+          // Final frame — clamp to endY and finish
+          reel.style.transform = `translate3d(0, ${endY}px, 0)`;
 
-      anim.onfinish = () => {
-        animationRef.current = null;
-        setCurrentIndex(finalIndexRef.current);
-        setStrip([]);
-        if (onSpinComplete && photos[finalIndexRef.current]) {
-          onSpinComplete(photos[finalIndexRef.current]);
+          // Fire any remaining ticks (safety net — should already be done)
+          while (nextTickIdx < STRIP_LEN) {
+            if (onPhotoChange) onPhotoChange();
+            nextTickIdx++;
+          }
+
+          rafRef.current = null;
+          setCurrentIndex(finalIndexRef.current);
+          setStrip([]);
+          if (onSpinComplete && photos[finalIndexRef.current]) {
+            onSpinComplete(photos[finalIndexRef.current]);
+          }
+          return;
         }
+
+        if (elapsed <= easeOutPhase) {
+          // Ease-out cubic: y = 1 - (1 - t)^3 — fast → slow (rythme préservé)
+          const t = elapsed / easeOutPhase;
+          const y = 1 - Math.pow(1 - t, 3);
+          scroll = y * peakY;
+        } else {
+          // Settle back from peakY (-4264) to endY (-4250) — smoothstep
+          const t = (elapsed - easeOutPhase) / settlePhase;
+          const ease = t * t * (3 - 2 * t);
+          scroll = peakY + (endY - peakY) * ease;
+        }
+
+        reel.style.transform = `translate3d(0, ${scroll}px, 0)`;
+
+        // Fire a click each time the strip crosses a photo boundary.
+        // Photo at position i is centered when scroll === -i * SLOT_HEIGHT.
+        // -scroll grows monotonically during the ease-out phase, so this
+        // catches every crossing without missing or duplicating any.
+        const absScroll = -scroll;
+        while (
+          nextTickIdx < STRIP_LEN &&
+          absScroll >= nextTickIdx * SLOT_HEIGHT
+        ) {
+          if (onPhotoChange) onPhotoChange();
+          nextTickIdx++;
+        }
+
+        rafRef.current = requestAnimationFrame(tick);
       };
+
+      rafRef.current = requestAnimationFrame(tick);
     });
 
     return () => {
-      cancelAnimationFrame(rafId);
-      if (animationRef.current) {
-        try { animationRef.current.cancel(); } catch { /* ignore */ }
-        animationRef.current = null;
+      cancelAnimationFrame(initialRaf);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
-      clickTimeoutsRef.current.forEach(clearTimeout);
-      clickTimeoutsRef.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSpinning, photos]);
