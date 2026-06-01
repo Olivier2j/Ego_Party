@@ -29,6 +29,38 @@ export default function SlotMachine() {
   const clickAudioPoolRef = useRef([]); // Pool of audio elements for rapid clicks
   const clickPoolIndexRef = useRef(0);
   const celebrationTimerRef = useRef(null);
+  const audioUnlockedRef = useRef(false);
+
+  // iOS Safari requires every <audio> element to be unlocked from inside a
+  // direct user gesture. We play+immediately pause each preloaded audio
+  // synchronously on the very first user tap on the lever. After this,
+  // every subsequent .play() (including those fired from rAF callbacks) works.
+  const unlockAudiosOnce = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    audioUnlockedRef.current = true;
+    const all = [
+      ...Object.values(audioRefs.current),
+      ...clickAudioPoolRef.current,
+    ];
+    all.forEach((audio) => {
+      if (!audio) return;
+      const prevVolume = audio.volume;
+      audio.volume = 0;
+      const p = audio.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.volume = prevVolume;
+        }).catch(() => {
+          audio.volume = prevVolume;
+        });
+      } else {
+        try { audio.pause(); audio.currentTime = 0; } catch { /* ignore */ }
+        audio.volume = prevVolume;
+      }
+    });
+  }, []);
 
   // Detect mobile vs desktop
   useEffect(() => {
@@ -129,6 +161,9 @@ export default function SlotMachine() {
   const handleSpin = useCallback(() => {
     if (isSpinning || photos.length === 0) return;
 
+    // iOS Safari: unlock all audios synchronously inside the user gesture
+    unlockAudiosOnce();
+
     // Stop any ongoing celebration
     if (celebrationTimerRef.current) {
       clearTimeout(celebrationTimerRef.current);
@@ -143,7 +178,7 @@ export default function SlotMachine() {
       setIsSpinning(true);
       // Keep leverPulled true - it will be reset when spin completes
     }, 300);
-  }, [isSpinning, photos.length, playSound]);
+  }, [isSpinning, photos.length, playSound, unlockAudiosOnce]);
 
   // Called by SlotReel when animation completes
   const handleSpinComplete = useCallback((photo) => {
@@ -277,27 +312,32 @@ export default function SlotMachine() {
               <div className="h-6 rounded-b-xl mt-4 border-t-2" style={{ background: 'linear-gradient(180deg, hsl(35 48% 45%) 0%, hsl(35 48% 55%) 100%)', borderColor: 'hsl(35 40% 55%)' }} />
             </div>
 
-            {/* Lever Section - INSIDE the frame */}
-            <div 
-              className={`relative cursor-pointer select-none transition-transform hover:scale-105 ${
-                !canSpin ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+            {/* Lever Section - INSIDE the frame. Native <button> for iOS Safari. */}
+            <button
+              type="button"
               onClick={handleSpin}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleSpin()}
+              disabled={!canSpin}
               aria-label="Tirer le levier pour tourner"
+              data-testid="lever-btn"
+              className={`relative select-none transition-transform p-0 m-0 bg-transparent border-0 outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 rounded-xl ${
+                canSpin ? 'cursor-pointer hover:scale-105' : 'opacity-50 cursor-not-allowed'
+              }`}
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                WebkitAppearance: 'none',
+              }}
             >
               {/* Lever with frame and red button */}
-              <div className="relative">
+              <div className="relative pointer-events-none">
                 {/* Fixed Frame/Mount - GREEN to match machine body */}
                 <div className="relative">
                   {/* Base plate - always horizontal */}
                   <div className="w-44 h-14 rounded-xl border-4 shadow-lg" style={{ background: 'linear-gradient(180deg, hsl(150 30% 20%) 0%, hsl(150 35% 14%) 50%, hsl(150 30% 18%) 100%)', borderColor: 'hsl(35 48% 45%)' }} />
-                  
+
                   {/* Slot/track for the button - darker green groove, always horizontal */}
                   <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 h-8 rounded-lg border-2 shadow-inner" style={{ background: 'hsl(150 35% 10%)', borderColor: 'hsl(150 30% 8%)' }} />
-                  
+
                   {/* Red Button - always horizontal movement (left/right) */}
                   <div
                     className="absolute"
@@ -305,16 +345,16 @@ export default function SlotMachine() {
                       left: leverPulled ? '124px' : '16px',
                       top: '50%',
                       transform: `translateY(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
-                      transition: leverPulled 
+                      transition: leverPulled
                         ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out'
                         : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out',
                     }}
                   >
                     {/* DARK RED/MAROON button #A51C30 - Always red */}
-                    <div 
+                    <div
                       className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-xl border-4 transition-all duration-300 relative ${
-                        canSpin 
-                          ? 'hover:shadow-[0_0_25px_rgba(165,28,48,0.6)]' 
+                        canSpin
+                          ? 'hover:shadow-[0_0_25px_rgba(165,28,48,0.6)]'
                           : 'opacity-70'
                       }`}
                       style={{
@@ -330,7 +370,7 @@ export default function SlotMachine() {
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
 
           {/* Bottom Bulbs */}
