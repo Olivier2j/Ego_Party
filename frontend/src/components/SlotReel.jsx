@@ -29,6 +29,8 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
 
   const reelRef = useRef(null);
   const rafRef = useRef(null);
+  const animRef = useRef(null);
+  const finishTimerRef = useRef(null);
   const finalIndexRef = useRef(0);
   // Sliding window of recently picked final indices — avoids visible repeats
   // while keeping pure randomness (we just resample if we land on a recent one).
@@ -69,6 +71,14 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      if (animRef.current) {
+        try { animRef.current.cancel(); } catch { /* ignore */ }
+        animRef.current = null;
+      }
+      if (finishTimerRef.current) {
+        clearTimeout(finishTimerRef.current);
+        finishTimerRef.current = null;
+      }
       return;
     }
 
@@ -86,83 +96,127 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
     newStrip[STRIP_LEN - 1] = photos[finalIdx];
     setStrip(newStrip);
 
-    // Wait for the strip to be in the DOM, then start the rAF-driven animation.
-    // We drive transform AND click sounds from the SAME loop so they can never
-    // drift apart. The click for photo i fires the very frame the strip crosses
-    // -i * SLOT_HEIGHT — i.e. when photo i becomes the centered one.
-    const initialRaf = requestAnimationFrame(() => {
+    // Animation strategy (mobile-safe, especially iOS Safari):
+    //   • Web Animations API (reel.animate) for the visual transform — runs on
+    //     the compositor thread, NEVER pauses even if the main thread is busy
+    //     (image decoding, GC, scroll inertia). This is critical for iPhone:
+    //     a pure rAF main-thread animation will freeze visually mid-spin.
+    //   • A lightweight rAF loop just READS anim.currentTime and fires the
+    //     click sounds when the curve crosses each photo boundary. If iOS
+    //     throttles the rAF, the visual keeps going and we catch up the
+    //     missed clicks on the next tick.
+    //   • A setTimeout fallback guarantees onSpinComplete fires even if
+    //     anim.onfinish is dropped by iOS (known WebKit quirk).
+    const startSpin = () => {
       const reel = reelRef.current;
       if (!reel) return;
 
-      const endY = -(STRIP_LEN - 1) * SLOT_HEIGHT;     // -4250 (final settle)
-      const peakY = endY - OVERSHOOT_PX;               // -4264 (overshoot peak at 92%)
-      const easeOutPhase = SPIN_DURATION * 0.92;       // 0 → 92%: ease-out cubic
-      const settlePhase = SPIN_DURATION - easeOutPhase; // 92 → 100%: gentle settle
+      const endY = -(STRIP_LEN - 1) * SLOT_HEIGHT;     // -4250
+      const peakY = endY - OVERSHOOT_PX;               // -4264
 
-      const startTime = performance.now();
-      let nextTickIdx = 1; // next photo boundary to "click" on (1..STRIP_LEN-1)
+      // Web Animations API — runs on compositor, immune to main-thread jank
+      const keyframes = [
+        { transform: 'translate3d(0, 0, 0)', offset: 0 },
+        { transform: `translate3d(0, ${peakY}px, 0)`, offset: 0.92,
+          easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)' }, // canonical ease-out cubic
+        { transform: `translate3d(0, ${endY}px, 0)`, offset: 1,
+          easing: 'cubic-bezier(0.34, 0, 0.64, 1)' },
+      ];
 
-      const tick = (now) => {
-        const elapsed = now - startTime;
-        let scroll;
+      let anim;
+      try {
+        anim = reel.animate(keyframes, {
+          duration: SPIN_DURATION,
+          fill: 'forwards',
+        });
+      } catch {
+        // Extremely old browsers — fall back to a static transform; spin will
+        // still resolve via the finishTimer below.
+        reel.style.transform = `translate3d(0, ${endY}px, 0)`;
+      }
+      animRef.current = anim || null;
 
-        if (elapsed >= SPIN_DURATION) {
-          // Final frame — clamp to endY and finish
-          reel.style.transform = `translate3d(0, ${endY}px, 0)`;
+      // Lightweight rAF loop: read currentTime, fire clicks at boundary crossings.
+      // peakY is reached at 92% of duration via ease-out cubic. We invert:
+      //   y(t) = 1 - (1-t)^3  →  scroll = y * peakY  (for t ∈ [0, 0.92])
+      // Beyond 92% we just clamp to endY for click purposes.
+      const easeOutPhase = SPIN_DURATION * 0.92;
+      let nextTickIdx = 1;
 
-          // Fire any remaining ticks (safety net — should already be done)
-          while (nextTickIdx < STRIP_LEN) {
-            if (onPhotoChange) onPhotoChange();
-            nextTickIdx++;
-          }
-
-          rafRef.current = null;
-          setCurrentIndex(finalIndexRef.current);
-          setStrip([]);
-          if (onSpinComplete && photos[finalIndexRef.current]) {
-            onSpinComplete(photos[finalIndexRef.current]);
-          }
-          return;
-        }
-
-        if (elapsed <= easeOutPhase) {
-          // Ease-out cubic: y = 1 - (1 - t)^3 — fast → slow (rythme préservé)
-          const t = elapsed / easeOutPhase;
-          const y = 1 - Math.pow(1 - t, 3);
-          scroll = y * peakY;
+      const tickClicks = () => {
+        const t = anim ? (anim.currentTime || 0) : performance.now() - spinStart;
+        let absScroll;
+        if (t <= easeOutPhase) {
+          const u = t / easeOutPhase;
+          const y = 1 - Math.pow(1 - u, 3);
+          absScroll = Math.abs(y * peakY);
         } else {
-          // Settle back from peakY (-4264) to endY (-4250) — smoothstep
-          const t = (elapsed - easeOutPhase) / settlePhase;
-          const ease = t * t * (3 - 2 * t);
-          scroll = peakY + (endY - peakY) * ease;
+          absScroll = Math.abs(endY);
         }
-
-        reel.style.transform = `translate3d(0, ${scroll}px, 0)`;
-
-        // Fire a click each time the strip crosses a photo boundary.
-        // Photo at position i is centered when scroll === -i * SLOT_HEIGHT.
-        // -scroll grows monotonically during the ease-out phase, so this
-        // catches every crossing without missing or duplicating any.
-        const absScroll = -scroll;
-        while (
-          nextTickIdx < STRIP_LEN &&
-          absScroll >= nextTickIdx * SLOT_HEIGHT
-        ) {
+        while (nextTickIdx < STRIP_LEN && absScroll >= nextTickIdx * SLOT_HEIGHT) {
           if (onPhotoChange) onPhotoChange();
           nextTickIdx++;
         }
+        if (nextTickIdx < STRIP_LEN) {
+          rafRef.current = requestAnimationFrame(tickClicks);
+        } else {
+          rafRef.current = null;
+        }
+      };
+      const spinStart = performance.now(); // fallback time source
+      rafRef.current = requestAnimationFrame(tickClicks);
 
-        rafRef.current = requestAnimationFrame(tick);
+      // Finalisation: prefer anim.onfinish, but ALWAYS have a timer fallback
+      // because iOS Safari sometimes drops the 'finish' event when the tab
+      // is backgrounded, the user touches the screen, or memory is tight.
+      let finalized = false;
+      const finalize = () => {
+        if (finalized) return;
+        finalized = true;
+        if (finishTimerRef.current) {
+          clearTimeout(finishTimerRef.current);
+          finishTimerRef.current = null;
+        }
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+        // Make sure remaining clicks fire (catch-up if rAF was throttled)
+        while (nextTickIdx < STRIP_LEN) {
+          if (onPhotoChange) onPhotoChange();
+          nextTickIdx++;
+        }
+        animRef.current = null;
+        setCurrentIndex(finalIndexRef.current);
+        setStrip([]);
+        if (onSpinComplete && photos[finalIndexRef.current]) {
+          onSpinComplete(photos[finalIndexRef.current]);
+        }
       };
 
-      rafRef.current = requestAnimationFrame(tick);
-    });
+      if (anim) {
+        anim.onfinish = finalize;
+      }
+      // Safety net: +200ms after expected end → finalize anyway
+      finishTimerRef.current = setTimeout(finalize, SPIN_DURATION + 200);
+    };
+
+    // Wait one rAF so the strip is mounted in the DOM, then start.
+    const initialRaf = requestAnimationFrame(startSpin);
 
     return () => {
       cancelAnimationFrame(initialRaf);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+      if (animRef.current) {
+        try { animRef.current.cancel(); } catch { /* ignore */ }
+        animRef.current = null;
+      }
+      if (finishTimerRef.current) {
+        clearTimeout(finishTimerRef.current);
+        finishTimerRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
