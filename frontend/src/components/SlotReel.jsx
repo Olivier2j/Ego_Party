@@ -132,9 +132,9 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
 
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-      {/* Bordered viewport: 250x250 with 3px black border, matches original look */}
+      {/* Viewport: 250x250, no black border */}
       <div
-        className={`relative border-[3px] border-black rounded-sm shadow-xl overflow-hidden transform transition-transform duration-300 ${
+        className={`relative rounded-sm shadow-xl overflow-hidden transform transition-transform duration-300 ${
           spinning ? 'scale-95' : 'scale-100'
         }`}
         style={{ width: '250px', height: `${SLOT_HEIGHT}px` }}

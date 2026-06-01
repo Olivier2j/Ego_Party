@@ -232,21 +232,21 @@ export default function SlotMachine() {
           {/* Top Bulbs */}
           <CasinoBulbs position="top" count={11} isSpinning={isSpinning} />
           
-          {/* Main content area: Slot + Lever side by side on desktop, stacked on mobile */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+          {/* Main content area: Slot on top, lever horizontal below (all screen sizes) */}
+          <div className="flex flex-col items-center gap-4 sm:gap-6">
             
             {/* Slot Section */}
             <div className="flex flex-col">
               {/* Gold Top Plate */}
               <div className="h-6 rounded-t-xl mb-4 border-b-2" style={{ background: 'linear-gradient(180deg, hsl(35 48% 55%) 0%, hsl(35 48% 45%) 100%)', borderColor: 'hsl(35 40% 35%)' }} />
 
-              {/* Slot Window - with gold border */}
-              <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-xl p-1 shadow-inner-slot border-4" style={{ borderColor: 'hsl(35 48% 40%)' }}>
+              {/* Slot Window - with gold border, machine-body background (no dark frame) */}
+              <div className="relative rounded-xl p-1 shadow-inner-slot border-4" style={{ background: 'linear-gradient(180deg, hsl(150 30% 22%) 0%, hsl(150 35% 16%) 100%)', borderColor: 'hsl(35 48% 40%)' }}>
                 {/* Glass Reflection */}
                 <div className="absolute inset-0 slot-glass rounded-xl pointer-events-none z-10" />
                 
                 {/* Polaroid Reel - Square format */}
-                <div className="relative overflow-hidden rounded-lg bg-black flex items-center justify-center" style={{ width: '280px', height: '280px' }}>
+                <div className="relative overflow-hidden rounded-lg flex items-center justify-center" style={{ width: '280px', height: '280px' }}>
                   {photos.length > 0 ? (
                     <SlotReel
                       photos={photos}
@@ -292,31 +292,22 @@ export default function SlotMachine() {
               <div className="relative">
                 {/* Fixed Frame/Mount - GREEN to match machine body */}
                 <div className="relative">
-                  {/* Base plate - wider horizontal on mobile, vertical on desktop */}
-                  <div className="w-44 h-14 sm:w-16 sm:h-36 rounded-xl border-4 shadow-lg" style={{ background: 'linear-gradient(180deg, hsl(150 30% 20%) 0%, hsl(150 35% 14%) 50%, hsl(150 30% 18%) 100%)', borderColor: 'hsl(35 48% 45%)' }} />
+                  {/* Base plate - always horizontal */}
+                  <div className="w-44 h-14 rounded-xl border-4 shadow-lg" style={{ background: 'linear-gradient(180deg, hsl(150 30% 20%) 0%, hsl(150 35% 14%) 50%, hsl(150 30% 18%) 100%)', borderColor: 'hsl(35 48% 45%)' }} />
                   
-                  {/* Slot/track for the button - darker green groove */}
-                  <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:top-4 sm:translate-y-0 h-8 sm:w-10 sm:h-24 rounded-lg border-2 shadow-inner" style={{ background: 'hsl(150 35% 10%)', borderColor: 'hsl(150 30% 8%)' }} />
+                  {/* Slot/track for the button - darker green groove, always horizontal */}
+                  <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 h-8 rounded-lg border-2 shadow-inner" style={{ background: 'hsl(150 35% 10%)', borderColor: 'hsl(150 30% 8%)' }} />
                   
-                  {/* Red Button - Mobile: horizontal (left/right), Desktop: vertical (top/bottom) */}
+                  {/* Red Button - always horizontal movement (left/right) */}
                   <div
                     className="absolute"
-                    style={isMobile ? {
-                      // Mobile: horizontal movement
+                    style={{
                       left: leverPulled ? '124px' : '16px',
                       top: '50%',
                       transform: `translateY(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
                       transition: leverPulled 
                         ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out'
                         : 'left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out',
-                    } : {
-                      // Desktop: vertical movement
-                      left: '50%',
-                      top: leverPulled ? '88px' : '16px',
-                      transform: `translateX(-50%) ${leverPulled ? 'scale(0.95)' : 'scale(1)'}`,
-                      transition: leverPulled 
-                        ? 'top 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out'
-                        : 'top 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s ease-in-out',
                     }}
                   >
                     {/* DARK RED/MAROON button #A51C30 - Always red */}
