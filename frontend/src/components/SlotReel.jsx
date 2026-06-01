@@ -70,12 +70,15 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
       if (!reel) return;
 
       const endY = -(STRIP_LEN - 1) * SLOT_HEIGHT;
+      const peakY = endY - OVERSHOOT_PX; // strip position at the 92% overshoot peak
 
       const keyframes = [
         { transform: 'translate3d(0, 0, 0)', offset: 0 },
-        // Ease-out cubic to just past the target (overshoot)
-        { transform: `translate3d(0, ${endY - OVERSHOOT_PX}px, 0)`, offset: 0.92,
-          easing: 'cubic-bezier(0.33, 0.68, 0.49, 0.98)' },
+        // Pure ease-out cubic to just past the target (overshoot).
+        // Using the canonical ease-out cubic curve so the inverse formula
+        // (t = 1 - (1-y)^(1/3)) below is mathematically exact.
+        { transform: `translate3d(0, ${peakY}px, 0)`, offset: 0.92,
+          easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)' },
         // Gentle settle back onto the target (bounce back)
         { transform: `translate3d(0, ${endY}px, 0)`, offset: 1,
           easing: 'cubic-bezier(0.34, 0, 0.64, 1)' },
@@ -83,16 +86,19 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
 
       const anim = reel.animate(keyframes, {
         duration: SPIN_DURATION,
-        easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
         fill: 'forwards',
       });
       animationRef.current = anim;
 
-      // Schedule click sounds — one per photo transition, timed to the ease-out curve
+      // Schedule click sounds — one per photo arriving at the viewport center.
+      // Photo at position i is centered when scroll = -i * SLOT_HEIGHT.
+      // The animation reaches peakY (= endY - OVERSHOOT_PX) at 92% of duration
+      // following an ease-out cubic. So the fractional progress of the curve
+      // when photo i arrives at center is y_i = (i * SLOT_HEIGHT) / |peakY|.
       // Inverse of ease-out cubic: t = 1 - (1 - y)^(1/3)
-      // We map to the first 92% of the duration (before overshoot)
+      const peakDistance = Math.abs(peakY);
       for (let i = 1; i < STRIP_LEN; i++) {
-        const y = i / (STRIP_LEN - 1);
+        const y = (i * SLOT_HEIGHT) / peakDistance;
         const t = 1 - Math.pow(1 - y, 1 / 3);
         const time = t * SPIN_DURATION * 0.92;
         const tid = setTimeout(() => { if (onPhotoChange) onPhotoChange(); }, time);
