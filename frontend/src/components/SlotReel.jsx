@@ -12,6 +12,7 @@ const STRIP_LEN = 18;          // photos in the scrolling strip
 const SLOT_HEIGHT = 250;       // each photo slot vertical size (matches 250x250 viewport)
 const SPIN_DURATION = 2500;    // ms
 const OVERSHOOT_PX = 14;       // "bounce back" past target before settling
+const RECENT_HISTORY = 30;     // anti-repeat window for the final picked photo
 
 /**
  * Slot reel using a pre-built strip + GPU-composited CSS animation via
@@ -29,6 +30,29 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
   const reelRef = useRef(null);
   const rafRef = useRef(null);
   const finalIndexRef = useRef(0);
+  // Sliding window of recently picked final indices — avoids visible repeats
+  // while keeping pure randomness (we just resample if we land on a recent one).
+  // Disabled automatically when photos.length <= RECENT_HISTORY.
+  const recentIndicesRef = useRef([]);
+
+  // Pick a uniformly random index that isn't in the recent-history window.
+  // Falls back to pure random if anti-repeat would leave no valid choice.
+  const pickNonRecentIndex = (len) => {
+    if (len <= RECENT_HISTORY) return getSecureRandomIndex(len);
+    const recent = new Set(recentIndicesRef.current);
+    // Bounded retry — with len > RECENT_HISTORY, expected tries is < 1.5
+    for (let tries = 0; tries < 50; tries++) {
+      const idx = getSecureRandomIndex(len);
+      if (!recent.has(idx)) return idx;
+    }
+    return getSecureRandomIndex(len); // safety fallback (statistically unreachable)
+  };
+
+  const pushRecent = (idx) => {
+    const hist = recentIndicesRef.current;
+    hist.push(idx);
+    if (hist.length > RECENT_HISTORY) hist.shift();
+  };
 
   // Pick a new random photo whenever the photo set is (re)loaded and we're idle
   useEffect(() => {
@@ -49,9 +73,10 @@ export default function SlotReel({ photos, isSpinning, onSpinComplete, onPhotoCh
     }
 
     // Build strip: start with currently displayed photo (seamless),
-    // middle random, end = new random target
-    const finalIdx = getSecureRandomIndex(photos.length);
+    // middle random, end = new random target (anti-repeat for the final pick)
+    const finalIdx = pickNonRecentIndex(photos.length);
     finalIndexRef.current = finalIdx;
+    pushRecent(finalIdx);
 
     const newStrip = new Array(STRIP_LEN);
     newStrip[0] = photos[currentIndex];
